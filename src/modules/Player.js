@@ -1,0 +1,127 @@
+import * as THREE from 'three'
+import * as CANNON from 'cannon-es'
+
+export class Player {
+  constructor(scene, world, isLocal = true) {
+    this.isLocal = isLocal
+
+    this.mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshStandardMaterial({ color: isLocal ? 0x00ff00 : 0xff0000 })
+    )
+    this.mesh.castShadow = true
+    this.mesh.position.set(0, 5, 0)
+    scene.add(this.mesh)
+
+    this.body = new CANNON.Body({
+        mass: isLocal ? 1 : 0,
+      shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
+      position: new CANNON.Vec3(0, 5, 0),
+    })
+    world.addBody(this.body)
+
+    this.keys = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      jump: false,
+    }
+
+    this.canJump = false
+    if (isLocal) this.setupControls()
+
+    this.currentPosition = new THREE.Vector3()
+    this.targetPosition = new THREE.Vector3()
+    this.lerpAlpha = 0.1
+  }
+
+  setupControls() {
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'w') this.keys.forward = true
+      if (e.key === 's') this.keys.backward = true
+      if (e.key === 'a') this.keys.left = true
+      if (e.key === 'd') this.keys.right = true
+      if (e.code === 'Space') this.keys.jump = true
+    })
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w') this.keys.forward = false
+      if (e.key === 's') this.keys.backward = false
+      if (e.key === 'a') this.keys.left = false
+      if (e.key === 'd') this.keys.right = false
+      if (e.code === 'Space') this.keys.jump = false
+    })
+  }
+
+  update(world) {
+    if (this.isLocal) {
+      const speed = 5
+      const jumpForce = 5
+      const vel = this.body.velocity
+
+      vel.x = 0
+      vel.z = 0
+
+      if (this.keys.forward) vel.z -= speed
+      if (this.keys.backward) vel.z += speed
+      if (this.keys.left) vel.x -= speed
+      if (this.keys.right) vel.x += speed
+
+      if (this.keys.jump && this.canJump) {
+        vel.y = jumpForce
+        this.canJump = false
+      }
+
+      // Ground check
+      const ray = new CANNON.Ray()
+      ray.from.copy(this.body.position)
+      ray.to.set(
+        this.body.position.x,
+        this.body.position.y - 1.5,
+        this.body.position.z
+      )
+
+      const result = new CANNON.RaycastResult()
+      ray.intersectBodies(world.bodies, result)
+
+      if (result.hasHit && result.distance < 1.1) {
+        this.canJump = true
+      }
+      this.mesh.position.copy(this.body.position)
+
+    } else {
+      this.currentPosition.lerp(this.targetPosition, this.lerpAlpha)
+      this.body.position.copy(this.currentPosition)
+      this.mesh.position.copy(this.currentPosition)
+    }
+  }
+
+  setPosition(pos) {
+    if (this.isLocal) {
+      this.body.position.set(pos.x, pos.y, pos.z)
+      this.mesh.position.copy(this.body.position)
+    } else {
+      this.targetPosition.set(pos.x, pos.y, pos.z)
+
+      if (this.currentPosition.lengthSq() === 0) {
+        this.currentPosition.copy(this.targetPosition)
+        this.body.position.copy(this.currentPosition)
+        this.mesh.position.copy(this.currentPosition)
+      }
+    }
+  }
+
+  getPosition() {
+    return this.body.position
+  }
+
+  setColor(hex) {
+    this.mesh.material.color.setHex(hex)
+  }
+
+  destroy(scene, world) {
+    scene.remove(this.mesh)
+    world.removeBody(this.body)
+  }
+}
