@@ -140,6 +140,16 @@ camera.position.set(
 )
 camera.lookAt(cameraTarget)
 
+for (const id in remotePlayers) {
+  const remote = remotePlayers[id]
+  const current = remote.mesh.position
+  const target = remote.targetPos
+
+  // Smooth movement
+  current.lerp(new THREE.Vector3(target.x, target.y, target.z), 0.1)
+}
+
+
 renderer.render(scene, camera)
 }
 animate()
