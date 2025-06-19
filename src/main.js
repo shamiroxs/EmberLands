@@ -2,7 +2,9 @@ import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 import { Player } from './modules/Player.js'
 import { world } from './physics/physics.js'
+import { loadImage, getHeightData } from './utils/heightmap.js'
 
+import cannonDebugger from 'cannon-es-debugger'
 
 const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
@@ -23,8 +25,6 @@ const light = new THREE.DirectionalLight(0xffffff, 1)
 light.position.set(5, 10, 5)
 scene.add(light)
 
-
-
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(50, 50),
   new THREE.MeshStandardMaterial({ color: 0x333333 })
@@ -40,12 +40,37 @@ const groundBody = new CANNON.Body({
 groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
 world.addBody(groundBody)
 
-const localPlayer = new Player(scene, world, true)
+const { mesh: terrainMesh, heightData, size, resolution } = await createTerrain(scene)
+
+//terrain
+const matrix = buildHeightMatrix(heightData, resolution)
+const shape = new CANNON.Heightfield(matrix, { elementSize: size / (resolution - 1) })
+
+const terrainBody = new CANNON.Body({ mass: 0 })
+terrainBody.addShape(shape)
+terrainBody.position.set(-size/2, 0, -size/2 +100) // align with mesh
+
+terrainBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
+
+world.addBody(terrainBody)
+
+const localPlayer = new Player(scene, world, true, terrainMesh)
 
 const remotePlayers = new Map() 
-//const remotePlayers = {} // id: { mesh, position }
 let myId = null
 const cameraTarget = new THREE.Vector3()
+
+function buildHeightMatrix(heightData, resolution) {
+  const matrix = []
+  for (let y = 0; y < resolution; y++) {
+    const row = []
+    for (let x = 0; x < resolution; x++) {
+      row.push(heightData[y * resolution + x] * 15) // same heightScale
+    }
+    matrix.push(row)
+  }
+  return matrix
+}
 
 
 function animate() {
@@ -122,3 +147,33 @@ socket.onmessage = (event) => {
 }
 
 
+// Terrain
+async function createTerrain(scene) {
+  const img = await loadImage('/terrain.png')
+  const resolution = 512
+  const size = 100
+  const heightScale = 15
+
+  const heightData = getHeightData(img, resolution)
+  const geometry = new THREE.PlaneGeometry(size, size, resolution - 1, resolution - 1)
+  geometry.rotateX(-Math.PI / 2)
+  geometry.rotateY(Math.PI / 2)
+
+  for (let i = 0; i < geometry.attributes.position.count; i++) {
+    const y = heightData[i] * heightScale
+    geometry.attributes.position.setY(i, y)
+  }
+
+  geometry.computeVertexNormals()
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x556633,
+    flatShading: false,
+  })
+
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.receiveShadow = true
+  scene.add(mesh)
+
+  return { mesh, heightData, size, resolution }
+}

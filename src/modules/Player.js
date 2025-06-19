@@ -2,21 +2,36 @@ import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 
 export class Player {
-  constructor(scene, world, isLocal = true) {
+  constructor(scene, world, isLocal = true, terrainMesh = null) {
     this.isLocal = isLocal
+    this.terrainMesh = terrainMesh
+
+    const spawnX = 0
+    const spawnZ = 0
+    let spawnY = 15
+    if (terrainMesh) {
+      const raycaster = new THREE.Raycaster(
+        new THREE.Vector3(spawnX, 100, spawnZ),
+        new THREE.Vector3(0, -1, 0)
+      )
+      const intersects = raycaster.intersectObject(terrainMesh)
+      if (intersects.length > 0) {
+        spawnY = intersects[0].point.y + 5
+      }
+    }
 
     this.mesh = new THREE.Mesh(
       new THREE.BoxGeometry(1, 1, 1),
       new THREE.MeshStandardMaterial({ color: isLocal ? 0x00ff00 : 0xff0000 })
     )
     this.mesh.castShadow = true
-    this.mesh.position.set(0, 5, 0)
+    this.mesh.position.set(spawnX, spawnY, spawnZ)
     scene.add(this.mesh)
 
     this.body = new CANNON.Body({
         mass: isLocal ? 1 : 0,
       shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
-      position: new CANNON.Vec3(0, 5, 0),
+      position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
     })
     world.addBody(this.body)
 
@@ -83,11 +98,16 @@ export class Player {
       )
 
       const result = new CANNON.RaycastResult()
-      ray.intersectBodies(world.bodies, result)
 
-      if (result.hasHit && result.distance < 1.1) {
+      const otherBodies = world.bodies.filter(body => body !== this.body)
+
+      ray.intersectBodies(otherBodies, result)
+
+      console.log(result)
+      if (result.hasHit) {
         this.canJump = true
       }
+      else { this.canJump = false}
       this.mesh.position.copy(this.body.position)
 
     } else {
