@@ -86,7 +86,7 @@ const remotePlayers = {} // id: { mesh, position }
 let myId = null
 const moveSpeed = 5
 const jumpForce = 5
-let canJump = false
+let canJump = true
 
 const cameraTarget = new THREE.Vector3()
 
@@ -114,19 +114,20 @@ function animate() {
   playerMesh.position.copy(playerBody.position)
 
   const ray = new CANNON.Ray()
-
-ray.from.copy(playerBody.position) // start at player
-ray.to.set(
-  playerBody.position.x,
-  playerBody.position.y - 1.5, // cast ray down 1.5 units
-  playerBody.position.z
-)
-
-ray.intersectBodies([groundBody])
-
-if (ray.result?.hasHit && ray.result.distance < 1.1) {
-  canJump = true
-}
+  ray.from.copy(playerBody.position)
+  ray.to.set(
+    playerBody.position.x,
+    playerBody.position.y - 1.5,
+    playerBody.position.z
+  )
+  
+  const result = new CANNON.RaycastResult()
+  ray.intersectBodies([groundBody], result)
+  
+  if (result.hasHit && result.distance < 1.1) {
+    canJump = true
+  }
+  
 
 cameraTarget.set(
   playerBody.position.x,
