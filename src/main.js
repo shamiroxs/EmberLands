@@ -3,6 +3,7 @@ import * as CANNON from 'cannon-es'
 import { Player } from './modules/Player.js'
 import { world } from './physics/physics.js'
 import { loadImage, getHeightData } from './utils/heightmap.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import cannonDebugger from 'cannon-es-debugger'
 
@@ -54,6 +55,22 @@ terrainBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
 
 world.addBody(terrainBody)
 
+const cannonDebug = cannonDebugger(scene, world, {
+  color: 0x00ff00, 
+});
+
+
+const loader = new GLTFLoader()
+
+const modelPaths = {
+  tree: '/models/tree.glb',
+  rock: '/models/rock.glb',
+  bush: '/models/bush.glb',
+  grass: '/models/grass.glb',
+}
+
+scatterObstacles(heightData, size, resolution, 15, 40)
+
 const localPlayer = new Player(scene, world, true, terrainMesh)
 
 const remotePlayers = new Map() 
@@ -76,6 +93,8 @@ function buildHeightMatrix(heightData, resolution) {
 function animate() {
   requestAnimationFrame(animate)
   world.step(1 / 60)
+
+  //cannonDebug.update();
 
   for (const player of remotePlayers.values()) {
     player.update(world)
@@ -176,4 +195,61 @@ async function createTerrain(scene) {
   scene.add(mesh)
 
   return { mesh, heightData, size, resolution }
+}
+
+function addObstacle(path, position, scale = 1) {
+  loader.load(path, (gltf) => {
+    const model = gltf.scene
+    model.position.copy(position)
+    model.scale.setScalar(scale)
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+    scene.add(model)
+
+    // Add physics (approximate with box shape)
+    const bbox = new THREE.Box3().setFromObject(model)
+    const size = new THREE.Vector3()
+    bbox.getSize(size)
+
+    const shape = new CANNON.Box(
+      new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)
+    )
+
+    const body = new CANNON.Body({ mass: 0 })
+    body.addShape(shape)
+    body.position.set(position.x, position.y + size.y / 2, position.z)
+    world.addBody(body)
+  })
+}
+
+// Place N objects randomly on terrain
+async function scatterObstacles(heightData, size, resolution, heightScale = 15, count = 30) {
+  for (let i = 0; i < count; i++) {
+    const type = ['tree', 'rock', 'bush', 'grass'][Math.floor(Math.random() * 4)]
+    const path = modelPaths[type]
+
+    const originalX = (Math.random() - 0.5) * 100
+    const originalZ = (Math.random() - 0.5) * 100
+
+    const x = originalZ
+    const z = -originalX
+
+    // Sample Y from terrain
+    const tx = Math.floor(((originalX + size / 2) / size) * (resolution - 1))
+    const tz = Math.floor(((originalZ + size / 2) / size) * (resolution - 1))
+
+    const index = tz * resolution + tx
+    const y = heightData[index] * heightScale
+
+    let scale_model = 1
+    if (type === 'grass') scale_model = 0.5 + Math.random() * 0.2
+    else if (type === 'rock') scale_model = 0.01 + Math.random() * 0.01
+    else if (type === 'bush') scale_model = 2
+
+    addObstacle(path, new THREE.Vector3(x, y, z), scale_model)
+  }
 }

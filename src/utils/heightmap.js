@@ -7,7 +7,7 @@ export function loadImage(url) {
     })
   }
   
-  export function getHeightData(img, size = 256) {
+  export function getHeightData(img, size = 512) {
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size

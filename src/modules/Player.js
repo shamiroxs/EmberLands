@@ -103,7 +103,6 @@ export class Player {
 
       ray.intersectBodies(otherBodies, result)
 
-      console.log(result)
       if (result.hasHit) {
         this.canJump = true
       }
