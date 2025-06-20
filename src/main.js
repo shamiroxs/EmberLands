@@ -4,6 +4,8 @@ import { Player } from './modules/Player.js'
 import { world } from './physics/physics.js'
 import { loadImage, getHeightData } from './utils/heightmap.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { Water } from 'three/examples/jsm/objects/Water2.js'
+import { TextureLoader, Vector2, PlaneGeometry, RepeatWrapping, Color } from 'three'
 
 import cannonDebugger from 'cannon-es-debugger'
 
@@ -59,7 +61,40 @@ const cannonDebug = cannonDebugger(scene, world, {
   color: 0x00ff00, 
 });
 
+//textures
+const loader_sky = new THREE.CubeTextureLoader()
+const skybox = loader_sky.setPath('/textures/skybox/').load([
+  'xpos.jpg', 'xneg.jpg',
+  'ypos.jpg', 'yneg.jpg',
+  'zpos.jpg', 'zneg.jpg',
+])
+scene.background = skybox
 
+//water
+const textureLoader = new TextureLoader()
+const normalMap0 = textureLoader.load('/textures/waternormals.jpg')
+const normalMap1 = textureLoader.load('/textures/waternormals.jpg')
+normalMap0.wrapS = normalMap0.wrapT = RepeatWrapping
+normalMap1.wrapS = normalMap1.wrapT = RepeatWrapping
+
+const waterGeometry = new PlaneGeometry(100, 100)
+
+const water = new Water(waterGeometry, {
+  color: 0x447799,
+  scale: 2,                    
+  flowDirection: new Vector2(0, 1), 
+  textureWidth: 512,
+  textureHeight: 512,
+  normalMap0,
+  normalMap1,
+  flowSpeed: 0.01,             
+})
+
+water.rotation.x = -Math.PI / 2
+water.position.y = 0.74
+scene.add(water)
+
+//Obstacles
 const loader = new GLTFLoader()
 
 const modelPaths = {
@@ -186,7 +221,7 @@ async function createTerrain(scene) {
   geometry.computeVertexNormals()
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0x556633,
+    color: 0x2F6B1C,
     flatShading: false,
   })
 

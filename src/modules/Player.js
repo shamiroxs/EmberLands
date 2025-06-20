@@ -78,10 +78,19 @@ export class Player {
       vel.x = 0
       vel.z = 0
 
-      if (this.keys.forward) vel.z -= speed
-      if (this.keys.backward) vel.z += speed
-      if (this.keys.left) vel.x -= speed
-      if (this.keys.right) vel.x += speed
+      const pos = this.body.position;
+      const maxDist = 49; 
+  
+      const moveX = (this.keys.left ? -1 : 0) + (this.keys.right ? 1 : 0);
+      const moveZ = (this.keys.forward ? -1 : 0) + (this.keys.backward ? 1 : 0);
+  
+      if (Math.abs(pos.x) < maxDist || (pos.x < -maxDist && moveX > 0) || (pos.x > maxDist && moveX < 0)) {
+        vel.x = moveX * speed;
+      }
+  
+      if (Math.abs(pos.z) < maxDist || (pos.z < -maxDist && moveZ > 0) || (pos.z > maxDist && moveZ < 0)) {
+        vel.z = moveZ * speed;
+      }
 
       if (this.keys.jump && this.canJump) {
         vel.y = jumpForce
