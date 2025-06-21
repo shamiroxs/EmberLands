@@ -6,6 +6,7 @@ import { loadImage, getHeightData } from './utils/heightmap.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { Water } from 'three/examples/jsm/objects/Water2.js'
 import { TextureLoader, Vector2, PlaneGeometry, RepeatWrapping, Color } from 'three'
+import seedrandom from 'seedrandom'
 
 import cannonDebugger from 'cannon-es-debugger'
 
@@ -70,6 +71,9 @@ const skybox = loader_sky.setPath('/textures/skybox/').load([
 ])
 scene.background = skybox
 
+//fog
+scene.fog = new THREE.Fog(0x88bb88, 20, 60) // color, near, far
+
 //water
 const textureLoader = new TextureLoader()
 const normalMap0 = textureLoader.load('/textures/waternormals.jpg')
@@ -87,7 +91,7 @@ const water = new Water(waterGeometry, {
   textureHeight: 512,
   normalMap0,
   normalMap1,
-  flowSpeed: 0.01,             
+  flowSpeed: 0.01,            
 })
 
 water.rotation.x = -Math.PI / 2
@@ -104,7 +108,9 @@ const modelPaths = {
   grass: '/models/grass.glb',
 }
 
-scatterObstacles(heightData, size, resolution, 15, 40)
+const rng = seedrandom("forest-map-v1")
+
+scatterObstacles(heightData, size, resolution, 15, 40, rng)
 
 const localPlayer = new Player(scene, world, true, terrainMesh)
 
@@ -204,6 +210,13 @@ socket.onmessage = (event) => {
 // Terrain
 async function createTerrain(scene) {
   const img = await loadImage('/terrain.png')
+  const textureLoader = new THREE.TextureLoader()
+
+  const terrainTexture = await textureLoader.loadAsync('/textures/grasslight.jpg')
+  terrainTexture.wrapS = THREE.RepeatWrapping
+  terrainTexture.wrapT = THREE.RepeatWrapping
+  terrainTexture.repeat.set(10, 10) // Adjust to tile the texture
+
   const resolution = 512
   const size = 100
   const heightScale = 15
@@ -221,7 +234,7 @@ async function createTerrain(scene) {
   geometry.computeVertexNormals()
 
   const material = new THREE.MeshStandardMaterial({
-    color: 0x2F6B1C,
+    map: terrainTexture,
     flatShading: false,
   })
 
@@ -262,13 +275,13 @@ function addObstacle(path, position, scale = 1) {
 }
 
 // Place N objects randomly on terrain
-async function scatterObstacles(heightData, size, resolution, heightScale = 15, count = 30) {
+async function scatterObstacles(heightData, size, resolution, heightScale = 15, count = 30, rng = Math.random) {
   for (let i = 0; i < count; i++) {
-    const type = ['tree', 'rock', 'bush', 'grass'][Math.floor(Math.random() * 4)]
+    const type = ['tree', 'rock', 'bush', 'grass'][Math.floor(rng() * 4)]
     const path = modelPaths[type]
 
-    const originalX = (Math.random() - 0.5) * 100
-    const originalZ = (Math.random() - 0.5) * 100
+    const originalX = (rng() - 0.5) * 100
+    const originalZ = (rng() - 0.5) * 100
 
     const x = originalZ
     const z = -originalX
@@ -281,9 +294,9 @@ async function scatterObstacles(heightData, size, resolution, heightScale = 15, 
     const y = heightData[index] * heightScale
 
     let scale_model = 1
-    if (type === 'grass') scale_model = 0.5 + Math.random() * 0.2
-    else if (type === 'rock') scale_model = 0.01 + Math.random() * 0.01
-    else if (type === 'bush') scale_model = 2
+    if (type === 'grass') scale_model = 0.5 + rng() * 0.2
+    else if (type === 'rock') scale_model = 0.01 + rng() * 0.01
+    else if (type === 'bush') scale_model = 5
 
     addObstacle(path, new THREE.Vector3(x, y, z), scale_model)
   }
