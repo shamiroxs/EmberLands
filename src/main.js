@@ -108,6 +108,7 @@ const modelPaths = {
   grass: '/models/grass.glb',
 }
 
+const obstacles = [];
 const rng = seedrandom("forest-map-v1")
 
 scatterObstacles(heightData, size, resolution, 15, 40, rng)
@@ -117,6 +118,12 @@ const localPlayer = new Player(scene, world, true, terrainMesh, camera)
 const remotePlayers = new Map() 
 let myId = null
 const cameraTarget = new THREE.Vector3()
+
+const minimap = document.getElementById('minimap')
+const radarCtx = minimap.getContext('2d')
+
+const radarRange = 50
+
 
 function buildHeightMatrix(heightData, resolution) {
   const matrix = []
@@ -157,7 +164,9 @@ function animate() {
   }
   
   localPlayer.update(world)
+  for (const p of remotePlayers.values()) p.update(world)
 
+  drawRadar()
   renderer.render(scene, camera)
 }
 animate()
@@ -282,6 +291,8 @@ function addObstacle(path, position, scale = 1) {
     body.addShape(shape)
     body.position.set(position.x, position.y + size.y / 2, position.z)
     world.addBody(body)
+
+    obstacles.push(position.clone());
   })
 }
 
@@ -310,5 +321,67 @@ async function scatterObstacles(heightData, size, resolution, heightScale = 15, 
     else if (type === 'bush') scale_model = 5
 
     addObstacle(path, new THREE.Vector3(x, y, z), scale_model)
+  }
+}
+
+function drawRadar() {
+  radarCtx.clearRect(0, 0, minimap.width, minimap.height)
+
+  const centerX = minimap.width / 2
+  const centerY = minimap.height / 2
+  const scale = (minimap.width / 2) / radarRange
+
+  // Radar circle
+  radarCtx.beginPath()
+  radarCtx.arc(centerX, centerY, minimap.width / 2 - 2, 0, Math.PI * 2)
+  radarCtx.strokeStyle = '#aaa'
+  radarCtx.lineWidth = 2
+  radarCtx.stroke()
+
+  //player
+  const forward = localPlayer.getForwardVector?.() || new THREE.Vector3(-1, 0, 0)
+  const angle = Math.atan2(forward.z, -forward.x)
+
+  radarCtx.save()
+  radarCtx.translate(centerX, centerY)
+  radarCtx.rotate(angle)
+
+  // Draw arrow 
+  radarCtx.beginPath()
+  radarCtx.moveTo(0, -6)   
+  radarCtx.lineTo(4, 4)    
+  radarCtx.lineTo(-4, 4)   
+  radarCtx.closePath()
+
+  radarCtx.fillStyle = 'white'
+  radarCtx.fill()
+
+  radarCtx.restore()
+
+  const playerPos = localPlayer.getPosition()
+
+  //remote players
+  for (const player of remotePlayers.values()) {
+    const pos = player.getPosition()
+    const dx = pos.x - playerPos.x
+    const dz = pos.z - playerPos.z
+    if (Math.hypot(dx, dz) < radarRange) {
+      radarCtx.fillStyle = 'red'
+      radarCtx.beginPath()
+      radarCtx.arc(centerX + dx * scale, centerY + dz * scale, 4, 0, Math.PI * 2)
+      radarCtx.fill()
+    }
+  }
+
+  //obstacles
+  for (const pos of obstacles) {
+    const dx = pos.x - playerPos.x
+    const dz = pos.z - playerPos.z
+    if (Math.hypot(dx, dz) < radarRange) {
+      radarCtx.fillStyle = '#999'
+      radarCtx.beginPath()
+      radarCtx.arc(centerX + dx * scale, centerY + dz * scale, 2, 0, Math.PI * 2)
+      radarCtx.fill()
+    }
   }
 }

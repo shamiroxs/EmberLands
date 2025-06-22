@@ -225,4 +225,11 @@ export class Player {
     scene.remove(this.mesh)
     world.removeBody(this.body)
   }
+
+  getForwardVector() {
+    const forward = new THREE.Vector3(-1, 0, 0)
+    forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), -this.rotation.yaw)
+    return forward.normalize()
+  }
+  
 }

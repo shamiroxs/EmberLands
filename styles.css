@@ -25,3 +25,13 @@ body {
     cursor: pointer;
     z-index: 10; 
 }
+
+#minimap {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 10;
+}
