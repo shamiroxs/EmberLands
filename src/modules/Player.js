@@ -84,21 +84,23 @@ export class Player {
 
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'w') this.keys.forward = true
-      if (e.key === 's') this.keys.backward = true
-      if (e.key === 'a') this.keys.left = true
-      if (e.key === 'd') this.keys.right = true
-      if (e.code === 'Space') this.keys.jump = true
-      
-    })
-
+      const key = e.key.toLowerCase();
+      if (key === 'w') this.keys.forward = true;
+      if (key === 's') this.keys.backward = true;
+      if (key === 'a') this.keys.left = true;
+      if (key === 'd') this.keys.right = true;
+      if (e.code === 'Space') this.keys.jump = true;
+    });
+    
     window.addEventListener('keyup', (e) => {
-      if (e.key === 'w') this.keys.forward = false
-      if (e.key === 's') this.keys.backward = false
-      if (e.key === 'a') this.keys.left = false
-      if (e.key === 'd') this.keys.right = false
-      if (e.code === 'Space') this.keys.jump = false
-    })
+      const key = e.key.toLowerCase();
+      if (key === 'w') this.keys.forward = false;
+      if (key === 's') this.keys.backward = false;
+      if (key === 'a') this.keys.left = false;
+      if (key === 'd') this.keys.right = false;
+      if (e.code === 'Space') this.keys.jump = false;
+    });
+    
 
     const canvas = document.getElementById('game')
 

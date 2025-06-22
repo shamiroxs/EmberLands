@@ -7,7 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { Water } from 'three/examples/jsm/objects/Water2.js'
 import { TextureLoader, Vector2, PlaneGeometry, RepeatWrapping, Color } from 'three'
 import seedrandom from 'seedrandom'
-
+import { pauseBackgroundMusic, playBackgroundMusic, resumeBackgroundMusic, stopBackgroundMusic } from './core/sound.js'
 import cannonDebugger from 'cannon-es-debugger'
 
 const canvas = document.getElementById('game')
@@ -95,7 +95,7 @@ const water = new Water(waterGeometry, {
 })
 
 water.rotation.x = -Math.PI / 2
-water.position.y = 0.74
+water.position.y = 0.9 //0.74
 scene.add(water)
 
 //Obstacles
@@ -130,6 +130,21 @@ function buildHeightMatrix(heightData, resolution) {
   return matrix
 }
 
+playBackgroundMusic();
+let isMuted = false;
+
+const toggleButton = document.getElementById('soundToggle');
+
+toggleButton.addEventListener('click', () => {
+    if (isMuted) {
+        resumeBackgroundMusic()
+        toggleButton.src = '/icons/sound.png'; 
+    } else {
+        pauseBackgroundMusic()
+        toggleButton.src = '/icons/silent.png';
+    }
+    isMuted = !isMuted;
+});
 
 function animate() {
   requestAnimationFrame(animate)
