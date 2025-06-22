@@ -112,7 +112,7 @@ const rng = seedrandom("forest-map-v1")
 
 scatterObstacles(heightData, size, resolution, 15, 40, rng)
 
-const localPlayer = new Player(scene, world, true, terrainMesh)
+const localPlayer = new Player(scene, world, true, terrainMesh, camera)
 
 const remotePlayers = new Map() 
 let myId = null
@@ -142,10 +142,6 @@ function animate() {
   }
   
   localPlayer.update(world)
-
-  cameraTarget.copy(localPlayer.getPosition())
-  camera.position.set(cameraTarget.x, cameraTarget.y + 2, cameraTarget.z + 5)
-  camera.lookAt(cameraTarget)
 
   renderer.render(scene, camera)
 }
@@ -212,7 +208,7 @@ async function createTerrain(scene) {
   const img = await loadImage('/terrain.png')
   const textureLoader = new THREE.TextureLoader()
 
-  const terrainTexture = await textureLoader.loadAsync('/textures/grasslight.jpg')
+  const terrainTexture = await textureLoader.loadAsync('/textures/grass_texture.jpg')
   terrainTexture.wrapS = THREE.RepeatWrapping
   terrainTexture.wrapT = THREE.RepeatWrapping
   terrainTexture.repeat.set(10, 10) // Adjust to tile the texture

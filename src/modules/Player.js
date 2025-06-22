@@ -2,9 +2,10 @@ import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 
 export class Player {
-  constructor(scene, world, isLocal = true, terrainMesh = null) {
+  constructor(scene, world, isLocal = true, terrainMesh = null, camera = null) {
     this.isLocal = isLocal
     this.terrainMesh = terrainMesh
+    this.camera = camera
 
     const spawnX = 0
     const spawnZ = 0
@@ -51,13 +52,44 @@ export class Player {
     this.lerpAlpha = 0.1
   }
 
+  updateCameraRotation() {
+    if (!this.camera) return
+  
+    this.camera.rotation.order = 'YXZ'
+    this.camera.rotation.y = this.rotation.yaw
+    this.camera.rotation.x = this.rotation.pitch
+  }
+  
+
   setupControls() {
+    
+    this.pointerLocked = false
+    this.rotation = { yaw: 0, pitch: 0 }
+
+    const onMouseMove = (e) => {
+      if (!this.pointerLocked) return
+
+      const sensitivity = 0.002
+      this.rotation.yaw -= e.movementX * sensitivity
+      this.rotation.pitch -= e.movementY * sensitivity
+
+      this.rotation.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.pitch))
+
+      this.updateCameraRotation()
+      this.mesh.rotation.y = this.rotation.yaw
+
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'w') this.keys.forward = true
       if (e.key === 's') this.keys.backward = true
       if (e.key === 'a') this.keys.left = true
       if (e.key === 'd') this.keys.right = true
       if (e.code === 'Space') this.keys.jump = true
+      
     })
 
     window.addEventListener('keyup', (e) => {
@@ -67,6 +99,17 @@ export class Player {
       if (e.key === 'd') this.keys.right = false
       if (e.code === 'Space') this.keys.jump = false
     })
+
+    const canvas = document.getElementById('game')
+
+    canvas.addEventListener('click', () => {
+      canvas.requestPointerLock()
+      
+    })
+  
+    document.addEventListener('pointerlockchange', () => {
+      this.pointerLocked = document.pointerLockElement === canvas
+    })
   }
 
   update(world) {
@@ -75,26 +118,54 @@ export class Player {
       const jumpForce = 5
       const vel = this.body.velocity
 
-      vel.x = 0
-      vel.z = 0
+      //movement direction
+      const forward = new THREE.Vector3()
+      this.camera.getWorldDirection(forward)
+      forward.y = 0
+      forward.normalize()
+
+      const right = new THREE.Vector3()
+      right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize()
+
+      const moveDir = new THREE.Vector3()
+      if (this.keys.forward) moveDir.add(forward)
+      if (this.keys.backward) moveDir.sub(forward)
+      if (this.keys.left) moveDir.sub(right)
+      if (this.keys.right) moveDir.add(right)
+
+      moveDir.normalize()
 
       const pos = this.body.position;
-      const maxDist = 49; 
-  
-      const moveX = (this.keys.left ? -1 : 0) + (this.keys.right ? 1 : 0);
-      const moveZ = (this.keys.forward ? -1 : 0) + (this.keys.backward ? 1 : 0);
-  
-      if (Math.abs(pos.x) < maxDist || (pos.x < -maxDist && moveX > 0) || (pos.x > maxDist && moveX < 0)) {
-        vel.x = moveX * speed;
-      }
-  
-      if (Math.abs(pos.z) < maxDist || (pos.z < -maxDist && moveZ > 0) || (pos.z > maxDist && moveZ < 0)) {
-        vel.z = moveZ * speed;
-      }
+      const maxDist = 52; 
+
+      const nextX = pos.x + moveDir.x * speed
+      const nextZ = pos.z + moveDir.z * speed
+
+      vel.x = (Math.abs(nextX) < maxDist) ? moveDir.x * speed : 0
+      vel.z = (Math.abs(nextZ) < maxDist) ? moveDir.z * speed : 0
 
       if (this.keys.jump && this.canJump) {
         vel.y = jumpForce
         this.canJump = false
+      }
+
+      if (this.camera) {
+        const cameraOffset = new THREE.Vector3(0, 2, 5) 
+        const playerDirection = new THREE.Vector3()
+        this.camera.getWorldDirection(playerDirection)
+      
+        const offset = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.yaw)
+      
+        this.camera.position.copy(this.body.position).add(offset)
+      
+        const bodyPosition = new THREE.Vector3(
+          this.body.position.x,
+          this.body.position.y,
+          this.body.position.z
+        )
+        
+        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 2, 0)))
+        
       }
 
       // Ground check
