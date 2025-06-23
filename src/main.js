@@ -23,7 +23,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 )
-camera.position.set(0, 2, 5)
+camera.position.set(0, 5, 4)
 
 const light = new THREE.DirectionalLight(0xffffff, 1)
 light.position.set(5, 10, 5)
@@ -132,6 +132,7 @@ toggleButton.addEventListener('click', () => {
 });
 
 let opponentId;
+const clock = new THREE.Clock()
 
 function animate() {
   requestAnimationFrame(animate)
@@ -143,7 +144,9 @@ function animate() {
     player.update(world)
   }
   
-  localPlayer.update(world)
+  const deltaTime = clock.getDelta()
+  localPlayer.update(world, deltaTime)
+
   for (const p of remotePlayers.values()) p.update(world)
 
   drawRadar()
@@ -228,6 +231,10 @@ export function sendDuelRequest(opponentId) {
       to: opponentId
     }))
   }
+}
+
+export function isDuelProcess(isDuel){
+  duelProcess = isDuel;
 }
 
 

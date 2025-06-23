@@ -1,3 +1,4 @@
+import { isDuelProcess } from '../../main'
 import { sendDuelRequest } from '/src/main.js'
 
 let potentialOpponentId = null
@@ -25,6 +26,7 @@ document.getElementById('duel-button').onclick = () => {
   sendDuelRequest(potentialOpponentId);
   console.log('clicked')
   document.getElementById('duel-ui').style.display = 'none';
+  //isDuelProcess(true)
 };
 
 document.getElementById('accept-duel').onclick = () => {
@@ -34,6 +36,8 @@ document.getElementById('accept-duel').onclick = () => {
 
 document.getElementById('decline-duel').onclick = () => {
   document.getElementById('duel-invite').style.display = 'none';
+  showDuelPrompt(potentialOpponentId);
+  isDuelProcess(false)
 };
 
   

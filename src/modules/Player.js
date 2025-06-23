@@ -1,11 +1,19 @@
 import * as THREE from 'three'
 import * as CANNON from 'cannon-es'
 
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
+
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null) {
     this.isLocal = isLocal
     this.terrainMesh = terrainMesh
     this.camera = camera
+
+    this.isJumping = false
+    this.jumpGracePeriod = 1
+    this.jumpTimer = 0
+
 
     const spawnX = 0
     const spawnZ = 0
@@ -21,14 +29,60 @@ export class Player {
       }
     }
 
-    this.mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshStandardMaterial({ color: isLocal ? 0x00ff00 : 0xff0000 })
-    )
-    this.mesh.castShadow = true
-    this.mesh.position.set(spawnX, spawnY, spawnZ)
-    scene.add(this.mesh)
+    //character adding
+    if (isLocal) {
+      this.actions = {}
+      this.activeAction = null
+      this.mixer = null
 
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/')
+      const loader = new GLTFLoader()
+      loader.setDRACOLoader(dracoLoader)
+
+      const animations = [
+        { name: 'idle', url: '/models/character/idle.glb' },
+        { name: 'walking', url: '/models/character/walking.glb' },
+        { name: 'jump', url: '/models/character/jump.glb' }
+      ]
+
+      const promises = animations.map(anim => 
+        new Promise(resolve => {
+          loader.load(anim.url, (gltf) => resolve({ name: anim.name, gltf }))
+        })
+      )
+
+      Promise.all(promises).then(results => {
+        const idleResult = results.find(r => r.name === 'idle')
+        this.mesh = idleResult.gltf.scene
+        this.mesh.scale.set(2, 2, 2)
+        this.mesh.position.set(spawnX, spawnY, spawnZ)
+        this.mesh.traverse(child => {
+          if (child.isMesh) child.castShadow = true
+        })
+        scene.add(this.mesh)
+
+        this.mixer = new THREE.AnimationMixer(this.mesh)
+
+        results.forEach(({ name, gltf }) => {
+          const clip = gltf.animations[0]
+          this.actions[name] = this.mixer.clipAction(clip)
+        })
+
+        this.playAction('idle')
+        this.currentState = 'idle'
+      })
+    } else {
+      // Keep the red box for remote players
+      this.mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshStandardMaterial({ color: 0xff0000 })
+      )
+      this.mesh.castShadow = true
+      this.mesh.position.set(spawnX, spawnY, spawnZ)
+      scene.add(this.mesh)
+    }
+    
     this.body = new CANNON.Body({
         mass: isLocal ? 1 : 0,
       shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
@@ -50,6 +104,8 @@ export class Player {
     this.currentPosition = new THREE.Vector3()
     this.targetPosition = new THREE.Vector3()
     this.lerpAlpha = 0.1
+
+    this.currentState = 'idle'
   }
 
   updateCameraRotation() {
@@ -76,7 +132,7 @@ export class Player {
       this.rotation.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.pitch))
 
       this.updateCameraRotation()
-      this.mesh.rotation.y = this.rotation.yaw
+      this.mesh.rotation.y = this.rotation.yaw + Math.PI
 
     }
 
@@ -114,11 +170,29 @@ export class Player {
     })
   }
 
-  update(world) {
+  playAction(name) {
+    if (!this.actions[name] || this.activeAction === this.actions[name]) return
+  
+    const nextAction = this.actions[name]
+    if (this.activeAction) {
+      this.activeAction.stop()
+    }
+    console.log('started playing', name)
+    nextAction.play()
+    this.activeAction = nextAction
+  }
+  
+
+  update(world, deltaTime) {
+    if (!this.mesh) return
     if (this.isLocal) {
       const speed = 5
       const jumpForce = 5
       const vel = this.body.velocity
+
+      if (this.isJumping) {
+        this.jumpTimer += deltaTime
+      }
 
       //movement direction
       const forward = new THREE.Vector3()
@@ -144,15 +218,20 @@ export class Player {
       const nextZ = pos.z + moveDir.z * speed
 
       vel.x = (Math.abs(nextX) < maxDist) ? moveDir.x * speed : 0
-      vel.z = (Math.abs(nextZ) < maxDist) ? moveDir.z * speed : 0
+      vel.z = (Math.abs(nextZ) < maxDist) ? moveDir.z * speed : 0   
 
-      if (this.keys.jump && this.canJump) {
-        vel.y = jumpForce
-        this.canJump = false
+      const isMoving = moveDir.lengthSq() > 0
+
+      if (!this.isJumping && isMoving && this.currentState !== 'walking') {
+        this.playAction('walking')
+        this.currentState = 'walking'
+      } else if (!this.isJumping && !isMoving && this.currentState !== 'idle') {
+        this.playAction('idle')
+        this.currentState = 'idle'
       }
 
       if (this.camera) {
-        const cameraOffset = new THREE.Vector3(0, 2, 5) 
+        const cameraOffset = new THREE.Vector3(0, 5, 4) 
         const playerDirection = new THREE.Vector3()
         this.camera.getWorldDirection(playerDirection)
       
@@ -166,7 +245,7 @@ export class Player {
           this.body.position.z
         )
         
-        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 2, 0)))
+        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 3, 0)))
         
       }
 
@@ -185,17 +264,43 @@ export class Player {
 
       ray.intersectBodies(otherBodies, result)
 
-      if (result.hasHit) {
-        this.canJump = true
-      }
-      else { this.canJump = false}
+      this.canJump = result.hasHit
+      console.log("has hit: ", result.hasHit)
       this.mesh.position.copy(this.body.position)
+
+      if (this.keys.jump && this.canJump && !this.isJumping) {
+        vel.y = jumpForce
+        this.canJump = false
+      
+        this.playAction('jump')
+        this.currentState = 'jump'
+        this.isJumping = true
+        this.jumpTimer = 0
+      }      
+
+      // Check landing
+      if (this.isJumping && this.canJump && this.jumpTimer > this.jumpGracePeriod) {
+        this.isJumping = false
+        const isMoving = moveDir.lengthSq() > 0
+        if (isMoving) {
+          this.playAction('walking')
+          this.currentState = 'walking'
+        } else {
+          this.playAction('idle')
+          this.currentState = 'idle'
+        }
+      }      
 
     } else {
       this.currentPosition.lerp(this.targetPosition, this.lerpAlpha)
       this.body.position.copy(this.currentPosition)
       this.mesh.position.copy(this.currentPosition)
     }
+
+    //animation
+    if (this.mixer) {
+      this.mixer.update(deltaTime)
+    }    
   }
 
   setPosition(pos) {
