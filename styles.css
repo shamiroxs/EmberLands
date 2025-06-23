@@ -35,3 +35,88 @@ body {
   pointer-events: none;
   z-index: 10;
 }
+
+#duel-ui {
+    display: none; 
+    position: fixed; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+}
+
+#duel-button {
+    background: transparent;
+    border: none;
+    font-size: 4rem; 
+    cursor: pointer;
+    outline: none;
+}
+
+#duel-invite {
+    display: block; 
+    position: fixed; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+  
+    background-color: rgba(10, 20, 10, 0.95);
+    color: #ccffe6; 
+    border: 2px solid #7fffd4; 
+    border-radius: 12px;
+    padding: 30px;
+    width: 320px;
+    box-shadow: 0 0 20px #7fffd4, 0 0 40px #7fffd480;
+    font-family: 'Georgia', serif;
+    text-align: center;
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  #duel-invite p {
+    margin-bottom: 20px;
+    font-size: 18px;
+    color: #afffd7; 
+  }
+  
+  #duel-invite button {
+    margin: 8px;
+    padding: 10px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  #accept-duel {
+    background-color: #00ffb3;
+    color: #001a12;
+    box-shadow: 0 0 10px #00ffb3;
+  }
+  
+  #accept-duel:hover {
+    background-color: #00e6a1;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #00ffc3;
+  }
+  
+  #decline-duel {
+    background-color: #ff4d4d;
+    color: white;
+    box-shadow: 0 0 10px #ff4d4d55;
+  }
+  
+  #decline-duel:hover {
+    background-color: #e63b3b;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px #ff4d4d;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -60%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+  }
+  

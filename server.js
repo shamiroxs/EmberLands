@@ -32,6 +32,19 @@ wss.on('connection', (ws) => {
         }
       }
     }
+
+    // Duel
+    if (data.type === 'duelRequest') {
+      const opponent = clients.get(data.to)
+      if (opponent) {
+        opponent.send(JSON.stringify({
+          type: 'duelInvite',
+          from: data.from
+        }))
+        console.log('request send')
+      }
+    }
+
   })
 
   ws.on('close', () => {
