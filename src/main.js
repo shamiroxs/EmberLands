@@ -49,8 +49,21 @@ scene.add(directionalLight)
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
 scene.add(ambientLight)
 
-//const shadowCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
-//scene.add(shadowCameraHelper)
+//prevent body to immerse to terrian
+const groundMaterial = new CANNON.Material('groundMaterial');
+const playerMaterial = new CANNON.Material('playerMaterial');
+
+const contactMaterial = new CANNON.ContactMaterial(
+  groundMaterial,
+  playerMaterial,
+  {
+    friction: 1.0,      
+    restitution: 0.0    
+  }
+);
+
+world.addContactMaterial(contactMaterial);
+
 
 const { mesh: terrainMesh, heightData, size, resolution } = await createTerrain(scene)
 
@@ -58,7 +71,10 @@ const { mesh: terrainMesh, heightData, size, resolution } = await createTerrain(
 const matrix = buildHeightMatrix(heightData, resolution)
 const shape = new CANNON.Heightfield(matrix, { elementSize: size / (resolution - 1) })
 
-const terrainBody = new CANNON.Body({ mass: 0 })
+const terrainBody = new CANNON.Body({ 
+  mass: 0,
+  material: groundMaterial,
+})
 terrainBody.addShape(shape)
 terrainBody.position.set(-size/2, 0, -size/2 +100) // align with mesh
 
@@ -112,7 +128,7 @@ const rng = seedrandom("forest-map-v1")
 
 scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
 
-const localPlayer = new Player(scene, world, true, terrainMesh, camera)
+const localPlayer = new Player(scene, world, true, terrainMesh, camera, playerMaterial)
 
 const remotePlayers = new Map() 
 let myId = null

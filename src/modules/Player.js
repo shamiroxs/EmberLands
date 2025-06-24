@@ -5,7 +5,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 
 export class Player {
-  constructor(scene, world, isLocal = true, terrainMesh = null, camera = null) {
+  constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null) {
     this.isLocal = isLocal
     this.terrainMesh = terrainMesh
     this.camera = camera
@@ -96,11 +96,14 @@ export class Player {
         delete this._queuedRemoteState
       }       
       })
-    
+
+    this.playerMaterial = playerMaterial || new CANNON.Material('playerMaterial');
+
     this.body = new CANNON.Body({
-        mass: isLocal ? 1 : 0,
+      mass: isLocal ? 1 : 0,
       shape: new CANNON.Box(new CANNON.Vec3(0.3, 0.3, 0.3)),
       position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
+      material: this.playerMaterial,
     })
     world.addBody(this.body)
 
