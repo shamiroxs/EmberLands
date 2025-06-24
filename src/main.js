@@ -14,6 +14,9 @@ const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
 renderer.setSize(window.innerWidth, window.innerHeight)
 
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x222233)
 
@@ -25,24 +28,29 @@ const camera = new THREE.PerspectiveCamera(
 )
 camera.position.set(0, 5, 4)
 
-const light = new THREE.DirectionalLight(0xffffff, 1)
-light.position.set(5, 10, 5)
-scene.add(light)
+const directionalLight = new THREE.DirectionalLight(0x88ffcc, 0.9)
+directionalLight.position.set(10, 20, 10)
+directionalLight.castShadow = true
 
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(50, 50),
-  new THREE.MeshStandardMaterial({ color: 0x333333 })
-)
-ground.rotation.x = -Math.PI / 2
-ground.receiveShadow = true
-scene.add(ground)
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.camera.near = 0.5
+directionalLight.shadow.camera.far = 100
 
-const groundBody = new CANNON.Body({
-  mass: 0, // static
-  shape: new CANNON.Plane(),
-})
-groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0)
-world.addBody(groundBody)
+directionalLight.shadow.camera.left = -30
+directionalLight.shadow.camera.right = 30
+directionalLight.shadow.camera.top = 30
+directionalLight.shadow.camera.bottom = -30
+
+
+scene.add(directionalLight)
+
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+//const shadowCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
+//scene.add(shadowCameraHelper)
 
 const { mesh: terrainMesh, heightData, size, resolution } = await createTerrain(scene)
 
@@ -72,7 +80,7 @@ const skybox = loader_sky.setPath('/textures/skybox/').load([
 scene.background = skybox
 
 //fog
-scene.fog = new THREE.Fog(0x88bb88, 20, 60) // color, near, far
+scene.fog = new THREE.Fog(0x88bb88, 10, 60) // color, near, far
 
 //water
 const textureLoader = new TextureLoader()
@@ -140,14 +148,12 @@ function animate() {
 
   //cannonDebug.update();
 
+  const deltaTime = clock.getDelta()
   for (const player of remotePlayers.values()) {
-    player.update(world)
+    player.update(world, deltaTime)
   }
   
-  const deltaTime = clock.getDelta()
   localPlayer.update(world, deltaTime)
-
-  for (const p of remotePlayers.values()) p.update(world)
 
   drawRadar()
   checkNearbyPlayers()
@@ -166,25 +172,27 @@ socket.addEventListener('open', () => {
   setInterval(() => {
     if (socket.readyState === WebSocket.OPEN) {
       const pos = localPlayer.getPosition()
-
+      const rotationY = localPlayer.getRotationY?.() || 0
+      const state = localPlayer.getState()
+  
       const data = {
         type: 'move',
         position: {
           x: pos.x,
           y: pos.y,
           z: pos.z
-        }
+        },
+        rotationY,
+        state
       }
+  
       socket.send(JSON.stringify(data))
     }
   }, 100)
+  
 })
 
 let msgType;
-
-socket.onmessage = (event) => {
-  
-}
 
 socket.onmessage = (event) => {
   const message = JSON.parse(event.data)
@@ -195,19 +203,21 @@ socket.onmessage = (event) => {
     console.log("My ID:", myId)
 
   } else if (message.type === 'playerUpdate') {
-    const { id, position } = message
-
-    if (id === myId) return // ignore our own updates
-
-    if (!remotePlayers.has(id)) {
-      const newRemote = new Player(scene, world, false)
-      newRemote.setPosition(position)
-      newRemote.setColor(0xff0000)
-      remotePlayers.set(id, newRemote)
-    } else {
-      const remote = remotePlayers.get(id)
-      remote.setPosition(position)
+    const { id, position, rotationY, state } = message
+  
+    if (id === myId) return // Ignore our own updates
+  
+    let remote = remotePlayers.get(id)
+  
+    if (!remote) {
+      remote = new Player(scene, world, false)
+      if (remote.ready) {
+        //remote.setColor(0xff0000)
+      }
+      remotePlayers.set(id, remote)
     }
+  
+    remote.setRemoteState({ position, rotationY, state })  
 
   } else if (message.type === 'disconnect') {
     const remote = remotePlayers.get(message.id)
@@ -233,6 +243,16 @@ export function sendDuelRequest(opponentId) {
   }
 }
 
+export function acceptDuelRequest(duelChallengerId){
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ 
+      type: 'duelAccepted', 
+      from: myId, 
+      to: duelChallengerId 
+    }));
+  }
+}
+
 export function isDuelProcess(isDuel){
   duelProcess = isDuel;
 }
@@ -245,7 +265,7 @@ function checkNearbyPlayers() {
     if(msgType === 'duelInvite'){
       duelProcess = true;
     }
-    if (dist < 5 && !duelProcess) {
+    if (dist < 2 && !duelProcess) {
       opponentId = id
       showDuelPrompt(id) 
     }

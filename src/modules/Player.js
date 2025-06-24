@@ -30,62 +30,76 @@ export class Player {
     }
 
     //character adding
-    if (isLocal) {
-      this.actions = {}
-      this.activeAction = null
-      this.mixer = null
+    this.actions = {}
+    this.activeAction = null
+    this.mixer = null
 
-      const dracoLoader = new DRACOLoader()
-      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/')
-      const loader = new GLTFLoader()
-      loader.setDRACOLoader(dracoLoader)
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/')
+    const loader = new GLTFLoader()
+    loader.setDRACOLoader(dracoLoader)
 
-      const animations = [
-        { name: 'idle', url: '/models/character/idle.glb' },
-        { name: 'walking', url: '/models/character/walking.glb' },
-        { name: 'jump', url: '/models/character/jump.glb' }
-      ]
+    const animations = [
+      { name: 'idle', url: '/models/character/idle.glb' },
+      { name: 'walking', url: '/models/character/walking.glb' },
+      { name: 'jump', url: '/models/character/jump.glb' }
+    ]
 
-      const promises = animations.map(anim => 
-        new Promise(resolve => {
-          loader.load(anim.url, (gltf) => resolve({ name: anim.name, gltf }))
-        })
-      )
-
-      Promise.all(promises).then(results => {
-        const idleResult = results.find(r => r.name === 'idle')
-        this.mesh = idleResult.gltf.scene
-        this.mesh.scale.set(2, 2, 2)
-        this.mesh.position.set(spawnX, spawnY, spawnZ)
-        this.mesh.traverse(child => {
-          if (child.isMesh) child.castShadow = true
-        })
-        scene.add(this.mesh)
-
-        this.mixer = new THREE.AnimationMixer(this.mesh)
-
-        results.forEach(({ name, gltf }) => {
-          const clip = gltf.animations[0]
-          this.actions[name] = this.mixer.clipAction(clip)
-        })
-
-        this.playAction('idle')
-        this.currentState = 'idle'
+    const promises = animations.map(anim => 
+      new Promise(resolve => {
+        loader.load(anim.url, (gltf) => resolve({ name: anim.name, gltf }))
       })
-    } else {
-      // Keep the red box for remote players
-      this.mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1),
-        new THREE.MeshStandardMaterial({ color: 0xff0000 })
-      )
-      this.mesh.castShadow = true
+    )
+
+    this.ready = false
+    Promise.all(promises).then(results => {
+      const idleResult = results.find(r => r.name === 'idle')
+      this.mesh = idleResult.gltf.scene
+      this.mesh.scale.set(1, 1, 1)
       this.mesh.position.set(spawnX, spawnY, spawnZ)
+      this.mesh.traverse(child => {
+        if (child.isMesh) child.castShadow = true
+      })
+
+      if (!isLocal) {
+       
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.6, 0.1, 16, 100),
+          new THREE.MeshStandardMaterial({ 
+            color: 0xff0000,
+            transparent: true,
+            opacity: 0.5
+          })
+        )
+        //ring.scale.set(0.8, 0.8, 0.8)
+        ring.position.y = 0.8
+        ring.position.z = -0.5
+        this.mesh.add(ring)        
+      }
+
       scene.add(this.mesh)
-    }
+
+      this.mixer = new THREE.AnimationMixer(this.mesh)
+
+      results.forEach(({ name, gltf }) => {
+        const clip = gltf.animations[0]
+        this.actions[name] = this.mixer.clipAction(clip)
+      })
+
+      this.playAction('idle')
+      this.currentState = 'idle'
+
+      this.ready = true;
+
+      if (this._queuedRemoteState) {
+        this.setRemoteState(this._queuedRemoteState)
+        delete this._queuedRemoteState
+      }       
+      })
     
     this.body = new CANNON.Body({
         mass: isLocal ? 1 : 0,
-      shape: new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5)),
+      shape: new CANNON.Box(new CANNON.Vec3(0.3, 0.3, 0.3)),
       position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
     })
     world.addBody(this.body)
@@ -177,17 +191,16 @@ export class Player {
     if (this.activeAction) {
       this.activeAction.stop()
     }
-    console.log('started playing', name)
     nextAction.play()
     this.activeAction = nextAction
   }
   
 
   update(world, deltaTime) {
-    if (!this.mesh) return
+    if (!this.ready || !this.mesh) return
     if (this.isLocal) {
       const speed = 5
-      const jumpForce = 5
+      const jumpForce = 7
       const vel = this.body.velocity
 
       if (this.isJumping) {
@@ -211,6 +224,14 @@ export class Player {
 
       moveDir.normalize()
 
+      //rotate player
+      if (moveDir.lengthSq() > 0) {
+        const moveYaw = Math.atan2(moveDir.x, moveDir.z)
+        this.mesh.rotation.y = moveYaw
+      } else {
+        //idle, then look forward
+        this.mesh.rotation.y = this.rotation.yaw + Math.PI
+      }
       const pos = this.body.position;
       const maxDist = 52; 
 
@@ -231,7 +252,7 @@ export class Player {
       }
 
       if (this.camera) {
-        const cameraOffset = new THREE.Vector3(0, 5, 4) 
+        const cameraOffset = new THREE.Vector3(0, 2.5, 2) 
         const playerDirection = new THREE.Vector3()
         this.camera.getWorldDirection(playerDirection)
       
@@ -245,7 +266,7 @@ export class Player {
           this.body.position.z
         )
         
-        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 3, 0)))
+        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 1.5, 0)))
         
       }
 
@@ -265,8 +286,7 @@ export class Player {
       ray.intersectBodies(otherBodies, result)
 
       this.canJump = result.hasHit
-      console.log("has hit: ", result.hasHit)
-      this.mesh.position.copy(this.body.position)
+      this.mesh.position.copy(this.body.position).add(new THREE.Vector3(0, -0.5, 0)) 
 
       if (this.keys.jump && this.canJump && !this.isJumping) {
         vel.y = jumpForce
@@ -294,7 +314,7 @@ export class Player {
     } else {
       this.currentPosition.lerp(this.targetPosition, this.lerpAlpha)
       this.body.position.copy(this.currentPosition)
-      this.mesh.position.copy(this.currentPosition)
+      this.mesh.position.copy(this.currentPosition).add(new THREE.Vector3(0, -0.5, 0))
     }
 
     //animation
@@ -304,16 +324,17 @@ export class Player {
   }
 
   setPosition(pos) {
+    if (!this.mesh) return
     if (this.isLocal) {
       this.body.position.set(pos.x, pos.y, pos.z)
-      this.mesh.position.copy(this.body.position)
+      this.mesh.position.copy(this.body.position).add(new THREE.Vector3(0, -0.5, 0)) 
     } else {
       this.targetPosition.set(pos.x, pos.y, pos.z)
 
       if (this.currentPosition.lengthSq() === 0) {
         this.currentPosition.copy(this.targetPosition)
         this.body.position.copy(this.currentPosition)
-        this.mesh.position.copy(this.currentPosition)
+        this.mesh.position.copy(this.currentPosition).add(new THREE.Vector3(0, -0.5, 0))
       }
     }
   }
@@ -336,5 +357,36 @@ export class Player {
     forward.applyAxisAngle(new THREE.Vector3(0, 1, 0), -this.rotation.yaw)
     return forward.normalize()
   }
+
+  getRotationY() {
+    return this.mesh?.rotation.y || 0
+  }
+  
+  getState() {
+    return this.currentState || 'idle'
+  }
+  
+
+  setState(state) {
+    if (this.currentState === state || !this.actions[state]) return
+    this.playAction(state)
+    this.currentState = state
+  } 
+
+  setRemoteState({ position, rotationY, state }) {
+    if (!this.ready) {
+      this._queuedRemoteState = { position, rotationY, state }
+      return
+    }
+
+    this.setPosition(position)
+  
+    if (this.mesh) {
+      this.mesh.rotation.y = rotationY
+    }
+  
+    this.setState(state)
+  }
+  
   
 }

@@ -1,4 +1,4 @@
-import { isDuelProcess } from '../../main'
+import { acceptDuelRequest, isDuelProcess } from '../../main'
 import { sendDuelRequest } from '/src/main.js'
 
 let potentialOpponentId = null
@@ -30,7 +30,7 @@ document.getElementById('duel-button').onclick = () => {
 };
 
 document.getElementById('accept-duel').onclick = () => {
-  socket.send(JSON.stringify({ type: 'duelAccepted', from: myId, to: duelChallengerId }));
+  acceptDuelRequest(duelChallengerId)
   document.getElementById('duel-invite').style.display = 'none';
 };
 

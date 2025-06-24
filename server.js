@@ -24,6 +24,8 @@ wss.on('connection', (ws) => {
         type: 'playerUpdate',
         id: clientId,
         position: data.position,
+        rotationY: data.rotationY || 0,
+        state: data.state || 'idle'
       })
 
       for (const [id, client] of clients.entries()) {
