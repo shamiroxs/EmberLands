@@ -9,6 +9,7 @@ import { pauseBackgroundMusic, playBackgroundMusic, resumeBackgroundMusic, stopB
 import cannonDebugger from 'cannon-es-debugger'
 import { createTerrain, buildHeightMatrix, scatterObstacles } from './modules/world/world.js'
 import { hideDuelPrompt, showDuelInvite, showDuelPrompt } from './modules/ui/duelUI.js'
+import { destroyArena, summonArena } from './modules/world/arena.js'
 
 const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
@@ -157,6 +158,7 @@ toggleButton.addEventListener('click', () => {
 
 let opponentId;
 const clock = new THREE.Clock()
+let arenaMixer = null
 
 function animate() {
   requestAnimationFrame(animate)
@@ -173,6 +175,10 @@ function animate() {
 
   drawRadar()
   checkNearbyPlayers()
+
+  if (arenaMixer) {
+    arenaMixer.update(deltaTime)
+  }  
 
   renderer.render(scene, camera)
 }
@@ -241,12 +247,25 @@ socket.onmessage = (event) => {
       remote.destroy(scene, world)
       remotePlayers.delete(message.id)
       hideDuelPrompt()
+      destroyArena(scene, world)
+      duelProcess = false
     }
   } else if (message.type === 'duelInvite') {
-    console.log('invitation recieved!')
     hideDuelPrompt()
-    showDuelInvite(message.from)
+    if(!duelProcess){
+      showDuelInvite(message.from)
+    }
+  } else if (message.type === 'duelAccepted') {
+    duelProcess = true
+    hideDuelPrompt()
+  {
+    (async () => {
+      const localPosition = localPlayer.getPosition()
+      const arenaData = await summonArena(scene, world, localPosition)
+      arenaMixer = arenaData.mixer
+    })()
   }
+  }  
 }
 
 export function sendDuelRequest(opponentId) {
@@ -259,13 +278,25 @@ export function sendDuelRequest(opponentId) {
   }
 }
 
-export function acceptDuelRequest(duelChallengerId){
+export async function acceptDuelRequest(duelChallengerId){
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ 
       type: 'duelAccepted', 
       from: myId, 
       to: duelChallengerId 
     }));
+  }
+
+  duelProcess = true
+  //summon arena
+  const challenger = remotePlayers.get(duelChallengerId)
+  if (challenger) {
+    const challengerPosition = challenger.getPosition()
+
+    const arenaData = await summonArena(scene, world, challengerPosition) 
+    arenaMixer = arenaData.mixer 
+  } else {
+    console.warn('Challenger not found in remotePlayers map')
   }
 }
 

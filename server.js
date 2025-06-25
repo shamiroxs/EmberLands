@@ -43,7 +43,16 @@ wss.on('connection', (ws) => {
           type: 'duelInvite',
           from: data.from
         }))
-        console.log('request send')
+      }
+    }
+
+    if (data.type === 'duelAccepted') {
+      const opponent = clients.get(data.to)
+      if (opponent && opponent.readyState === 1) {
+        opponent.send(JSON.stringify({
+          type: 'duelAccepted',
+          from: data.from
+        }))
       }
     }
 

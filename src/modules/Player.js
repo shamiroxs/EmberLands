@@ -71,7 +71,7 @@ export class Player {
             opacity: 0.5
           })
         )
-        //ring.scale.set(0.8, 0.8, 0.8)
+        ring.scale.set(0.8, 0.8, 0.8)
         ring.position.y = 0.8
         ring.position.z = -0.5
         this.mesh.add(ring)        
