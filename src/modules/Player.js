@@ -3,16 +3,24 @@ import * as CANNON from 'cannon-es'
 
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
+import { getDuelState } from './duelManager.js'
+import { sendHealthUpdate } from '../main.js';
 
 export class Player {
-  constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null) {
+  constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
     this.isLocal = isLocal
     this.terrainMesh = terrainMesh
     this.camera = camera
+    this.id = id
 
     this.isJumping = false
     this.jumpGracePeriod = 1
     this.jumpTimer = 0
+
+    this.lockedState = null;
+    this.lockTimer = 0;
+    this.lockDuration = 0;
+
 
 
     const spawnX = 0
@@ -42,8 +50,15 @@ export class Player {
     const animations = [
       { name: 'idle', url: '/models/character/idle.glb' },
       { name: 'walking', url: '/models/character/walking.glb' },
-      { name: 'jump', url: '/models/character/jump.glb' }
+      { name: 'jump', url: '/models/character/jump.glb' },
+      { name: 'blocking', url: '/models/character/blocking.glb' },
+      { name: 'punching', url: '/models/character/punching.glb' },
+      { name: 'kicking', url: '/models/character/kicking.glb' },
+      { name: 'taking_punch', url: '/models/character/taking_punch.glb' },
+      { name: 'victory', url: '/models/character/victory.glb' },
+      { name: 'defeated', url: '/models/character/defeated.glb' }
     ]
+    
 
     const promises = animations.map(anim => 
       new Promise(resolve => {
@@ -94,8 +109,12 @@ export class Player {
       if (this._queuedRemoteState) {
         this.setRemoteState(this._queuedRemoteState)
         delete this._queuedRemoteState
-      }       
-      })
+      }
+      this.healthBar = this.createHealthBar()
+      this.mesh.add(this.healthBar)
+
+      this.healthBar.position.set(0, 2, 0) 
+    })
 
     this.playerMaterial = playerMaterial || new CANNON.Material('playerMaterial');
 
@@ -113,6 +132,7 @@ export class Player {
       left: false,
       right: false,
       jump: false,
+      block: false,
     }
 
     this.canJump = false
@@ -123,6 +143,7 @@ export class Player {
     this.lerpAlpha = 0.1
 
     this.currentState = 'idle'
+    this.health = 100
   }
 
   updateCameraRotation() {
@@ -135,6 +156,7 @@ export class Player {
   
 
   setupControls() {
+    //window.addEventListener('contextmenu', (e) => e.preventDefault());
     
     this.pointerLocked = false
     this.rotation = { yaw: 0, pitch: 0 }
@@ -163,6 +185,7 @@ export class Player {
       if (key === 'a') this.keys.left = true;
       if (key === 'd') this.keys.right = true;
       if (e.code === 'Space') this.keys.jump = true;
+      if (e.code === 'ShiftLeft') this.keys.block = true;
     });
     
     window.addEventListener('keyup', (e) => {
@@ -172,7 +195,37 @@ export class Player {
       if (key === 'a') this.keys.left = false;
       if (key === 'd') this.keys.right = false;
       if (e.code === 'Space') this.keys.jump = false;
+      if (e.code === 'ShiftLeft') this.keys.block = false;
     });
+
+    // Mouse buttons
+    window.addEventListener('mousedown', (e) => {
+      if (!getDuelState().active || !this.pointerLocked) return;  
+
+      if (e.button === 2) { 
+        this.playAction('punching', 1);
+        this.currentState = 'punching'
+      } else if (e.button === 0) {
+        this.playAction('kicking', 1);
+        this.currentState = 'kicking'
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!getDuelState().active || !this.pointerLocked) return;
+    
+      if (e.button === 0 && this.currentState === 'kicking') {
+        this.playAction('idle'); 
+        this.currentState = 'idle';
+      }
+    
+      if (e.button === 2 && this.currentState === 'punching') {
+        this.playAction('idle');
+        this.currentState = 'idle';
+      }
+    });
+    
+
     
 
     const canvas = document.getElementById('game')
@@ -187,24 +240,134 @@ export class Player {
     })
   }
 
-  playAction(name) {
-    if (!this.actions[name] || this.activeAction === this.actions[name]) return
+  playAction(name, lockDuration = 0) {
+    if (!this.actions[name] || this.activeAction === this.actions[name]) return;
   
-    const nextAction = this.actions[name]
+    const nextAction = this.actions[name];
     if (this.activeAction) {
-      this.activeAction.stop()
+      this.activeAction.stop();
     }
-    nextAction.play()
-    this.activeAction = nextAction
+  
+    nextAction.reset().play();
+    this.activeAction = nextAction;
+  
+    if (lockDuration > 0) {
+      this.lockedState = name;
+      this.lockDuration = lockDuration;
+      this.lockTimer = 0;
+    }
   }
   
 
+  createHealthBar() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 128
+    canvas.height = 16
+  
+    const context = canvas.getContext('2d')
+    context.fillStyle = 'black'
+    context.fillRect(0, 0, 128, 16)
+  
+    context.fillStyle = 'lime'
+    context.fillRect(0, 0, 128, 16)
+  
+    const texture = new THREE.CanvasTexture(canvas)
+    const material = new THREE.SpriteMaterial({ map: texture })
+    const sprite = new THREE.Sprite(material)
+    sprite.scale.set(1.5, 0.2, 1)  // Size in world units
+  
+    sprite.userData.canvas = canvas
+    sprite.userData.context = context
+    sprite.userData.texture = texture
+    sprite.visible = false
+  
+    return sprite
+  }
+  
+
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount)
+    console.log(`Player ${this.id || 'local'} took damage! Health: ${this.health}`)
+  
+    if (this.health === 0) {
+      if (typeof onDuelEnd === 'function') {
+        onDuelEnd(this.id || myId)
+      }
+    }
+
+    if (this.healthBar) {
+      const ctx = this.healthBar.userData.context
+      ctx.clearRect(0, 0, 128, 16)
+    
+      ctx.fillStyle = 'black'
+      ctx.fillRect(0, 0, 128, 16)
+    
+      const healthWidth = (this.health / 100) * 128
+      ctx.fillStyle = this.health > 40 ? 'lime' : this.health > 20 ? 'orange' : 'red'
+      ctx.fillRect(0, 0, healthWidth, 16)
+    
+      this.healthBar.userData.texture.needsUpdate = true
+    }
+
+    if (!this.id || this.id === myId) {
+      const bar = document.getElementById('localHealthBar')
+      if (bar) {
+        bar.style.width = `${this.health}%`
+        bar.style.background = this.health > 40 ? 'limegreen' : this.health > 20 ? 'orange' : 'red'
+      }
+    }
+    
+    sendHealthUpdate(this.id || myId, this.health)
+  }  
+
   update(world, deltaTime) {
+    const duelState = getDuelState()
     if (!this.ready || !this.mesh) return
+
+   /* //duel
+    if (duelState.active) {
+      const playerId = this.id
+      const isInDuel = duelState.players.includes(playerId)
+    
+      if (!isInDuel) return
+    }*/
+
     if (this.isLocal) {
+      console.log(this.currentState)
       const speed = 5
       const jumpForce = 7
       const vel = this.body.velocity
+
+      //Allow rotation before lockstate
+      if (this.camera) {
+        const cameraOffset = new THREE.Vector3(0, 2.5, 2) 
+        const playerDirection = new THREE.Vector3()
+        this.camera.getWorldDirection(playerDirection)
+      
+        const offset = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.yaw)
+      
+        this.camera.position.copy(this.body.position).add(offset)
+      
+        const bodyPosition = new THREE.Vector3(
+          this.body.position.x,
+          this.body.position.y,
+          this.body.position.z
+        )
+        
+        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 1.5, 0)))
+        
+      }
+
+      //lock animations actions on mouse down
+      if (this.lockedState) {
+        this.lockTimer += deltaTime;
+        if (this.lockTimer < this.lockDuration) {
+          this.mixer.update(deltaTime);
+          return;
+        } else {
+          this.lockedState = null;
+        }
+      }
 
       if (this.isJumping) {
         this.jumpTimer += deltaTime
@@ -246,32 +409,21 @@ export class Player {
 
       const isMoving = moveDir.lengthSq() > 0
 
-      if (!this.isJumping && isMoving && this.currentState !== 'walking') {
-        this.playAction('walking')
-        this.currentState = 'walking'
-      } else if (!this.isJumping && !isMoving && this.currentState !== 'idle') {
-        this.playAction('idle')
-        this.currentState = 'idle'
+      if (getDuelState().active && this.keys.block) {
+        if (this.currentState !== 'blocking') {
+          this.playAction('blocking');
+          this.currentState = 'blocking';
+        }
+      } else {
+        if (!this.isJumping && isMoving && this.currentState !== 'walking') {
+          this.playAction('walking')
+          this.currentState = 'walking'
+        } else if (this.lockedState == null && !this.isJumping && !isMoving && this.currentState !== 'idle') {
+          this.playAction('idle')
+          this.currentState = 'idle'
+        }
       }
 
-      if (this.camera) {
-        const cameraOffset = new THREE.Vector3(0, 2.5, 2) 
-        const playerDirection = new THREE.Vector3()
-        this.camera.getWorldDirection(playerDirection)
-      
-        const offset = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation.yaw)
-      
-        this.camera.position.copy(this.body.position).add(offset)
-      
-        const bodyPosition = new THREE.Vector3(
-          this.body.position.x,
-          this.body.position.y,
-          this.body.position.z
-        )
-        
-        this.camera.lookAt(bodyPosition.clone().add(new THREE.Vector3(0, 1.5, 0)))
-        
-      }
 
       // Ground check
       const ray = new CANNON.Ray()
@@ -312,18 +464,24 @@ export class Player {
           this.playAction('idle')
           this.currentState = 'idle'
         }
-      }      
-
+      }  
     } else {
       this.currentPosition.lerp(this.targetPosition, this.lerpAlpha)
       this.body.position.copy(this.currentPosition)
       this.mesh.position.copy(this.currentPosition).add(new THREE.Vector3(0, -0.5, 0))
     }
 
+    this.healthBar.visible = duelState.active && duelState.players.includes(this.id)
+
     //animation
     if (this.mixer) {
       this.mixer.update(deltaTime)
     }    
+
+    if (this.healthBar && this.camera) {
+      this.healthBar.lookAt(this.camera.position)
+    }
+    
   }
 
   setPosition(pos) {

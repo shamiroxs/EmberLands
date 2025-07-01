@@ -56,6 +56,20 @@ wss.on('connection', (ws) => {
       }
     }
 
+    if (data.type === 'healthUpdate') {
+      const { id, health } = data
+      for (const pid in clients) {
+        if (pid !== id) {
+          clients[pid].send(JSON.stringify({
+            type: 'healthUpdate',
+            id,
+            health
+          }))
+        }
+      }
+    }
+    
+
   })
 
   ws.on('close', () => {

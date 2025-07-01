@@ -10,6 +10,7 @@ import cannonDebugger from 'cannon-es-debugger'
 import { createTerrain, buildHeightMatrix, scatterObstacles } from './modules/world/world.js'
 import { hideDuelPrompt, showDuelInvite, showDuelPrompt } from './modules/ui/duelUI.js'
 import { destroyArena, summonArena } from './modules/world/arena.js'
+import { duelState } from './modules/duelManager.js'
 
 const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
@@ -129,11 +130,11 @@ const rng = seedrandom("forest-map-v1")
 
 scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
 
-const localPlayer = new Player(scene, world, true, terrainMesh, camera, playerMaterial)
-
 const remotePlayers = new Map() 
 let myId = null
 const cameraTarget = new THREE.Vector3()
+
+const localPlayer = new Player(scene, world, true, terrainMesh, camera, playerMaterial, myId)
 
 const minimap = document.getElementById('minimap')
 const radarCtx = minimap.getContext('2d')
@@ -165,6 +166,12 @@ function animate() {
   world.step(1 / 60)
 
   //cannonDebug.update();
+
+  const localBar = document.getElementById('localHealthBarContainer')
+  if (localBar) {
+    localBar.style.display = duelState.active ? 'block' : 'none'
+  }
+
 
   const deltaTime = clock.getDelta()
   for (const player of remotePlayers.values()) {
@@ -233,9 +240,7 @@ socket.onmessage = (event) => {
   
     if (!remote) {
       remote = new Player(scene, world, false)
-      if (remote.ready) {
-        //remote.setColor(0xff0000)
-      }
+      remote.id = id 
       remotePlayers.set(id, remote)
     }
   
@@ -247,11 +252,13 @@ socket.onmessage = (event) => {
       remote.destroy(scene, world)
       remotePlayers.delete(message.id)
       hideDuelPrompt()
-      destroyArena(scene, world)
-      duelProcess = false
+      if(opponentId == remote.id){
+        destroyArena(scene, world)
+        duelProcess = false
+      }
     }
   } else if (message.type === 'duelInvite') {
-    hideDuelPrompt()
+      hideDuelPrompt()
     if(!duelProcess){
       showDuelInvite(message.from)
     }
@@ -263,9 +270,21 @@ socket.onmessage = (event) => {
       const localPosition = localPlayer.getPosition()
       const arenaData = await summonArena(scene, world, localPosition)
       arenaMixer = arenaData.mixer
+
+      duelState.active = true
+      duelState.players = [myId, opponentId]
+      duelState.arena = { center: arenaData.center, radius: 8 } 
+
     })()
   }
-  }  
+  } else if (message.type === 'healthUpdate') {
+    const player = remotePlayers.get(message.id)
+    if (player) {
+      player.health = message.health
+      console.log(`Remote player ${message.id} health: ${message.health}`)
+    }
+  }
+  
 }
 
 export function sendDuelRequest(opponentId) {
@@ -285,7 +304,7 @@ export async function acceptDuelRequest(duelChallengerId){
       from: myId, 
       to: duelChallengerId 
     }));
-  }
+  }  
 
   duelProcess = true
   //summon arena
@@ -295,6 +314,11 @@ export async function acceptDuelRequest(duelChallengerId){
 
     const arenaData = await summonArena(scene, world, challengerPosition) 
     arenaMixer = arenaData.mixer 
+
+    duelState.active = true
+    duelState.players = [myId, opponentId]
+    duelState.arena = { center: arenaData.center, radius: 8 } 
+
   } else {
     console.warn('Challenger not found in remotePlayers map')
   }
@@ -304,20 +328,33 @@ export function isDuelProcess(isDuel){
   duelProcess = isDuel;
 }
 
+export function sendHealthUpdate(playerId, health) {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      type: 'healthUpdate',
+      id: playerId,
+      health: health
+    }));
+  }
+}
 
 function checkNearbyPlayers() {
   const myPos = localPlayer.getPosition()
+  let foundNearbyPlayer = false;
+
   for (const [id, player] of remotePlayers.entries()) {
     const dist = myPos.distanceTo(player.getPosition())
+
     if(msgType === 'duelInvite'){
       duelProcess = true;
     }
     if (dist < 2 && !duelProcess) {
       opponentId = id
       showDuelPrompt(id) 
+      foundNearbyPlayer = true;
     }
-    else{
-      hideDuelPrompt()
+    if (!foundNearbyPlayer) {
+      hideDuelPrompt();
     }
   }
 }
