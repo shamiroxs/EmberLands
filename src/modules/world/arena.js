@@ -128,7 +128,6 @@ export function destroyArena(scene, world) {
     world.removeBody(arenaBody)
     arenaBody = null
   }
-  
 }
 
 /**

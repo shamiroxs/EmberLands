@@ -131,6 +131,7 @@ const rng = seedrandom("forest-map-v1")
 scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
 
 const remotePlayers = new Map() 
+window.remotePlayers = remotePlayers
 let myId = null
 const cameraTarget = new THREE.Vector3()
 
@@ -230,6 +231,7 @@ socket.onmessage = (event) => {
   if (message.type === 'init') {
     myId = message.id
     console.log("My ID:", myId)
+    localPlayer.id = myId
 
   } else if (message.type === 'playerUpdate') {
     const { id, position, rotationY, state } = message
@@ -255,6 +257,8 @@ socket.onmessage = (event) => {
       if(opponentId == remote.id){
         destroyArena(scene, world)
         duelProcess = false
+
+        duelState.active = false
       }
     }
   } else if (message.type === 'duelInvite') {
@@ -281,11 +285,37 @@ socket.onmessage = (event) => {
     const player = remotePlayers.get(message.id)
     if (player) {
       player.health = message.health
-      console.log(`Remote player ${message.id} health: ${message.health}`)
-    }
-  }
+
+      if (player.healthBar) {
+        const ctx = player.healthBar.userData.context
+        ctx.clearRect(0, 0, 128, 16)
   
+        ctx.fillStyle = 'black'
+        ctx.fillRect(0, 0, 128, 16)
+  
+        const healthWidth = (player.health / 100) * 128
+        ctx.fillStyle = player.health > 40 ? 'lime' : player.health > 20 ? 'orange' : 'red'
+        ctx.fillRect(0, 0, healthWidth, 16)
+  
+        player.healthBar.userData.texture.needsUpdate = true
+      }
+    }
+  } else if (message.type === 'applyDamage') {
+    if (message.to === myId || !message.to) {
+      localPlayer.takeDamage(message.damage)
+    }
+  }  
 }
+
+export function sendAttemptAttack() {
+    socket.send(JSON.stringify({
+      type: 'duelAttack',
+      from: myId,
+      to: opponentId,
+      damage: 10
+    }))
+}
+
 
 export function sendDuelRequest(opponentId) {
   if (socket.readyState === WebSocket.OPEN) {

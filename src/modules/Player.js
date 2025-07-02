@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 import { getDuelState } from './duelManager.js'
-import { sendHealthUpdate } from '../main.js';
+import { sendAttemptAttack, sendHealthUpdate } from '../main.js';
 
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
@@ -19,9 +19,16 @@ export class Player {
 
     this.lockedState = null;
     this.lockTimer = 0;
-    this.lockDuration = 0;
+    this.lockDuration = 0;  
+    
+    this.attackIntent = null  
+    this.attackCooldown = false
+    this.attackRange = 1
 
-
+    this.mouseButtonsHeld = {
+      left: false,
+      right: false
+    };    
 
     const spawnX = 0
     const spawnZ = 0
@@ -110,10 +117,13 @@ export class Player {
         this.setRemoteState(this._queuedRemoteState)
         delete this._queuedRemoteState
       }
-      this.healthBar = this.createHealthBar()
-      this.mesh.add(this.healthBar)
 
-      this.healthBar.position.set(0, 2, 0) 
+      if(!isLocal){
+        this.healthBar = this.createHealthBar()
+        this.mesh.add(this.healthBar)
+
+        this.healthBar.position.set(0, 2, 0)   
+      }
     })
 
     this.playerMaterial = playerMaterial || new CANNON.Material('playerMaterial');
@@ -203,9 +213,19 @@ export class Player {
       if (!getDuelState().active || !this.pointerLocked) return;  
 
       if (e.button === 2) { 
+        this.mouseButtonsHeld.right = true;
+
+        if (this.attackCooldown) return
+        this.attackIntent = 'punch'
+
         this.playAction('punching', 1);
         this.currentState = 'punching'
       } else if (e.button === 0) {
+        this.mouseButtonsHeld.left = true;
+
+        if (this.attackCooldown) return
+        this.attackIntent = 'kick'
+
         this.playAction('kicking', 1);
         this.currentState = 'kicking'
       }
@@ -215,11 +235,13 @@ export class Player {
       if (!getDuelState().active || !this.pointerLocked) return;
     
       if (e.button === 0 && this.currentState === 'kicking') {
+        this.mouseButtonsHeld.left = false;
         this.playAction('idle'); 
         this.currentState = 'idle';
       }
     
       if (e.button === 2 && this.currentState === 'punching') {
+        this.mouseButtonsHeld.right = false;
         this.playAction('idle');
         this.currentState = 'idle';
       }
@@ -239,6 +261,34 @@ export class Player {
       this.pointerLocked = document.pointerLockElement === canvas
     })
   }
+
+  attemptAttack() {
+    if (!getDuelState().active || this.attackCooldown) return 
+
+    const opponentId = getDuelState().players.find(id => id !== this.id && id !== null)
+    const opponent = window.remotePlayers?.get(opponentId)
+    if (!opponent) return
+  
+    const myPos = this.getPosition()
+    const oppPos = opponent.getPosition()
+    const distance = myPos.distanceTo(oppPos)
+  
+    if (distance < this.attackRange) {
+      const isBlocking = opponent.currentState === 'blocking'
+      const damage = this.attackIntent === 'kick' ? 15 : 10
+      const finalDamage = isBlocking ? damage / 2 : damage
+  
+      // Send damage via WebSocket
+      sendAttemptAttack();
+    }
+  
+    // Set cooldown
+    this.attackCooldown = true
+    setTimeout(() => {
+      this.attackCooldown = false
+    }, 1000)
+  }
+  
 
   playAction(name, lockDuration = 0) {
     if (!this.actions[name] || this.activeAction === this.actions[name]) return;
@@ -287,7 +337,6 @@ export class Player {
 
   takeDamage(amount) {
     this.health = Math.max(0, this.health - amount)
-    console.log(`Player ${this.id || 'local'} took damage! Health: ${this.health}`)
   
     if (this.health === 0) {
       if (typeof onDuelEnd === 'function') {
@@ -309,7 +358,7 @@ export class Player {
       this.healthBar.userData.texture.needsUpdate = true
     }
 
-    if (!this.id || this.id === myId) {
+    if (!this.id || this.isLocal) {
       const bar = document.getElementById('localHealthBar')
       if (bar) {
         bar.style.width = `${this.health}%`
@@ -317,20 +366,12 @@ export class Player {
       }
     }
     
-    sendHealthUpdate(this.id || myId, this.health)
+    sendHealthUpdate(this.id, this.health)
   }  
 
   update(world, deltaTime) {
     const duelState = getDuelState()
     if (!this.ready || !this.mesh) return
-
-   /* //duel
-    if (duelState.active) {
-      const playerId = this.id
-      const isInDuel = duelState.players.includes(playerId)
-    
-      if (!isInDuel) return
-    }*/
 
     if (this.isLocal) {
       console.log(this.currentState)
@@ -366,6 +407,13 @@ export class Player {
           return;
         } else {
           this.lockedState = null;
+          const attackStillHeld = (this.attackIntent === 'punch' && this.mouseButtonsHeld.right) || (this.attackIntent === 'kick' && this.mouseButtonsHeld.left);
+
+
+          if (this.attackIntent && attackStillHeld) {
+            this.attemptAttack()
+            this.attackIntent = null
+          }
         }
       }
 
@@ -471,7 +519,9 @@ export class Player {
       this.mesh.position.copy(this.currentPosition).add(new THREE.Vector3(0, -0.5, 0))
     }
 
-    this.healthBar.visible = duelState.active && duelState.players.includes(this.id)
+    if(!this.isLocal){
+      this.healthBar.visible = duelState.active && duelState.players.includes(this.id)
+    }
 
     //animation
     if (this.mixer) {

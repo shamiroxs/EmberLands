@@ -58,9 +58,10 @@ wss.on('connection', (ws) => {
 
     if (data.type === 'healthUpdate') {
       const { id, health } = data
-      for (const pid in clients) {
-        if (pid !== id) {
-          clients[pid].send(JSON.stringify({
+    
+      for (const [pid, client] of clients.entries()) {
+        if (pid !== id && client.readyState === 1) {
+          client.send(JSON.stringify({
             type: 'healthUpdate',
             id,
             health
@@ -68,6 +69,18 @@ wss.on('connection', (ws) => {
         }
       }
     }
+
+    if (data.type === 'duelAttack') {
+      const target = clients.get(data.to)
+      if (target) {
+        target.send(JSON.stringify({
+          type: 'applyDamage',
+          from: data.from,
+          damage: data.damage
+        }))
+      }
+    }
+    
     
 
   })
