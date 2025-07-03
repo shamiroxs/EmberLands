@@ -207,8 +207,8 @@ animate()
 
 let duelProcess = false;
 
-//const socket = new WebSocket("ws://localhost:8080")
-const socket = new WebSocket("wss://emberlands-server.onrender.com")
+const socket = new WebSocket("ws://localhost:8080")
+//const socket = new WebSocket("wss://emberlands-server.onrender.com")
 
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.')
@@ -336,6 +336,24 @@ export function onDuelEnd(loserId) {
 
   // UI message
   const text = (winnerId === myId) ? '🏆 You Win the Duel!' : (loserId === myId) ? '💀 You Lost the Duel!' : `👑 Player ${winnerId} wins the duel!`
+
+  if (localPlayer.id === winnerId) {
+    localPlayer.playAction('victory', 6)  
+    localPlayer.currentState = 'victory'
+  } else if (localPlayer.id === loserId) {
+    localPlayer.playAction('defeated', 6)
+    localPlayer.currentState = 'defeated'
+  }
+
+  for (const [id, remote] of remotePlayers.entries()) {
+    if (id === winnerId) {
+      remote.playAction('victory', 6)
+      remote.currentState = 'victory'
+    } else if (id === loserId) {
+      remote.playAction('defeated', 6)
+      remote.currentState = 'defeated'
+    }
+  }
 
   const resultBox = document.getElementById('duelResult')
   const resultText = document.getElementById('duelResultText')
