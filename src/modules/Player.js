@@ -207,7 +207,7 @@ export class Player {
       const touchCurrentX = e.touches[0].clientX
       const deltaX = touchCurrentX - touchStartX
     
-      simulateMouseMove({ movementX: -deltaX, movementY: 0 })
+      simulateMouseMove({ movementX: deltaX, movementY: 0 })
     
       touchStartX = touchCurrentX
     }
