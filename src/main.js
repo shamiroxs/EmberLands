@@ -526,6 +526,9 @@ if (isMobileDevice()) {
   if (minimap) {
     minimap.style.display ='none'
   }
+    
+  const thumbstick = document.getElementById('thumbstick-container')
+  if (thumbstick) thumbstick.style.display = 'block'
 
   document.getElementById('mobileControls').classList.remove('hidden')
 

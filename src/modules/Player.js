@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 import { getDuelState } from './duelManager.js'
-import { isMobileDevice, onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate, simulateMouseMove } from '../main.js';
+import { isMobileDevice, onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate } from '../main.js';
 
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
@@ -166,12 +166,15 @@ export class Player {
   
 
   setupControls() {
-    //window.addEventListener('contextmenu', (e) => e.preventDefault());
     
     this.pointerLocked = false
     this.rotation = { yaw: 0, pitch: 0 }
 
     let touchStartX = null
+    const container = document.getElementById('thumbstick-container')
+    const knob = document.getElementById('thumbstick-knob')
+    let origin = { x: 0, y: 0 }
+    let active = false
 
     const onMouseMove = (e) => {
       simulateMouseMove(e);
@@ -213,6 +216,46 @@ export class Player {
       touchStartX = null
     }
     
+    const resetThumbstick = () => {
+      knob.style.left = '40px'
+      knob.style.top = '40px'
+      this.keys.forward = false
+      this.keys.backward = false
+      this.keys.left = false
+      this.keys.right = false
+    }
+    
+    const updateDirection = (dx, dy) => {
+      this.keys.forward = dy < -20
+      this.keys.backward = dy > 20
+      this.keys.left = dx < -20
+      this.keys.right = dx > 20
+    }
+    
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return
+      active = true
+      const touch = e.touches[0]
+      origin.x = touch.clientX
+      origin.y = touch.clientY
+    })
+    
+    container.addEventListener('touchmove', (e) => {
+      if (!active || e.touches.length !== 1) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - origin.x
+      const dy = touch.clientY - origin.y
+    
+      knob.style.left = `${40 + dx}px`
+      knob.style.top = `${40 + dy}px`
+    
+      updateDirection(dx, dy)
+    })
+    
+    container.addEventListener('touchend', () => {
+      active = false
+      resetThumbstick()
+    })
     
 
     window.addEventListener('mousemove', onMouseMove)
