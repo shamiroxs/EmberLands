@@ -521,11 +521,14 @@ export function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 }
 
-if (isMobileDevice()) {
+if(!isMobileDevice()){
   const minimap = document.getElementById('minimap')
   if (minimap) {
-    minimap.style.display ='none'
+    minimap.style.display ='block'
   }
+}
+
+if (isMobileDevice()) {
     
   const thumbstick = document.getElementById('thumbstick-container')
   if (thumbstick) thumbstick.style.display = 'block'
