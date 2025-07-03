@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 import { getDuelState } from './duelManager.js'
-import { sendAttemptAttack, sendHealthUpdate } from '../main.js';
+import { onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate } from '../main.js';
 
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
@@ -23,7 +23,7 @@ export class Player {
     
     this.attackIntent = null  
     this.attackCooldown = false
-    this.attackRange = 1
+    this.attackRange = 1.3
 
     this.mouseButtonsHeld = {
       left: false,
@@ -337,10 +337,14 @@ export class Player {
 
   takeDamage(amount) {
     this.health = Math.max(0, this.health - amount)
+
+    this.playAction('taking_punch', 0.31)
+    this.currentState = 'taking_punch'
   
     if (this.health === 0) {
       if (typeof onDuelEnd === 'function') {
         onDuelEnd(this.id || myId)
+        sendDuelEnd(this.id || myId)
       }
     }
 
@@ -374,7 +378,6 @@ export class Player {
     if (!this.ready || !this.mesh) return
 
     if (this.isLocal) {
-      console.log(this.currentState)
       const speed = 5
       const jumpForce = 7
       const vel = this.body.velocity

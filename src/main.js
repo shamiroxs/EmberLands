@@ -304,7 +304,59 @@ socket.onmessage = (event) => {
     if (message.to === myId || !message.to) {
       localPlayer.takeDamage(message.damage)
     }
+  } else if (message.type === 'duelEnd') {
+    onDuelEnd(message.loserId)
+    duelProcess = false
+
+    duelState.players = []
+    duelState.arena = null
   }  
+}
+
+export function onDuelEnd(loserId) {
+  if (!duelState.active) return
+
+  const winnerId = duelState.players.find(id => id !== loserId)
+
+  duelState.active = false
+
+  // UI message
+  const text = (winnerId === myId) ? '🏆 You Win the Duel!' : (loserId === myId) ? '💀 You Lost the Duel!' : `👑 Player ${winnerId} wins the duel!`
+
+  const resultBox = document.getElementById('duelResult')
+  const resultText = document.getElementById('duelResultText')
+
+  resultText.textContent = text
+  resultBox.classList.remove('hidden')
+  resultBox.classList.add('visible')
+
+  setTimeout(() => {
+    resultBox.classList.remove('visible')
+    resultBox.classList.add('hidden')
+  }, 4000)
+
+
+  // Reset 
+  localPlayer.health = 100
+  for (const player of remotePlayers.values()) {
+    player.health = 100
+  }
+  destroyArena(scene, world)
+}
+
+export function sendDuelEnd(loserId) {
+  const winnerId = duelState.players.find(id => id !== loserId)
+  duelProcess = false
+
+  duelState.players = []
+  duelState.arena = null
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      type: 'duelEnd',
+      loserId: loserId,
+      winnerId: winnerId
+    }))
+  }
 }
 
 export function sendAttemptAttack() {
@@ -312,7 +364,7 @@ export function sendAttemptAttack() {
       type: 'duelAttack',
       from: myId,
       to: opponentId,
-      damage: 10
+      damage: 90
     }))
 }
 

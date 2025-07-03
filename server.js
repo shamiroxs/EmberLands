@@ -1,5 +1,6 @@
 import { WebSocketServer } from 'ws'
 import { v4 as uuidv4 } from 'uuid'
+import { duelState } from './src/modules/duelManager.js'
 
 const wss = new WebSocketServer({ port: 8080 })
 const clients = new Map()
@@ -81,8 +82,18 @@ wss.on('connection', (ws) => {
       }
     }
     
-    
+    if (data.type === 'duelEnd') {
+      const { loserId, winnerId} = data
+      const target = clients.get(winnerId)
 
+      if(target){
+        target.send(JSON.stringify({
+          type: 'duelEnd',
+          loserId,
+          winnerId
+        }))
+      }
+    }    
   })
 
   ws.on('close', () => {

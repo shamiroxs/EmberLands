@@ -139,4 +139,29 @@ body {
     transition: width 0.2s ease;
   }
   
+  .duel-result {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -30%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 30px 50px;
+    border-radius: 12px;
+    font-size: 2rem;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .duel-result.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .duel-result.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
   
