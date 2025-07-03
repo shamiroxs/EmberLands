@@ -546,4 +546,51 @@ if (isMobileDevice()) {
     simulateKey('ShiftLeft', 'keyup');
   });
 
+  const gameCanvas = document.getElementById('game')
+  gameCanvas.addEventListener('touchstart', onTouchStart)
+  gameCanvas.addEventListener('touchmove', onTouchMove)
+  gameCanvas.addEventListener('touchend', onTouchEnd)
+
+  let touchStartX = null
+
+  function onTouchStart(e) {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX
+    }
+  }
+
+  function onTouchMove(e) {
+    if (touchStartX === null || e.touches.length !== 1) return
+
+    const touchCurrentX = e.touches[0].clientX
+    const deltaX = touchCurrentX - touchStartX
+
+    const simulatedEvent = {
+      movementX: -deltaX, 
+      movementY: 0
+    }
+
+    simulateMouseMove(simulatedEvent)
+
+    touchStartX = touchCurrentX
+  }
+
+  function onTouchEnd() {
+    touchStartX = null
+  }
+
+  function simulateMouseMove(e) {
+    if (!localPlayer || !localPlayer.pointerLocked) return;
+  
+    const sensitivity = 0.002;
+    localPlayer.rotation.yaw -= e.movementX * sensitivity;
+    localPlayer.rotation.pitch -= e.movementY * sensitivity;
+  
+    localPlayer.rotation.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, localPlayer.rotation.pitch));
+  
+    localPlayer.updateCameraRotation();
+    localPlayer.mesh.rotation.y = localPlayer.rotation.yaw + Math.PI;
+  }
+  
+
 }
