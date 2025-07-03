@@ -7,7 +7,7 @@ const backgroundMusic = new Howl({
 });
 
 const battleMusic = new Howl({
-    src: ['/audio/Battle.mp3'],
+    src: ['/audio/Battle.ogg'],
     volume: 0.2,
     loop: true  
 });
