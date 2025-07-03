@@ -167,11 +167,12 @@ function simulateKey(key, type = 'keydown') {
 }
 
 function simulateMouse(button, type = 'mousedown') {
+  const canvas = document.getElementById('game');
   const event = new MouseEvent(type, {
     bubbles: true,
     button: button
   });
-  window.dispatchEvent(event);
+  canvas.dispatchEvent(event);
 }
 
 function animate() {
@@ -377,7 +378,7 @@ export function sendAttemptAttack() {
       type: 'duelAttack',
       from: myId,
       to: opponentId,
-      damage: 90
+      damage: 20
     }))
 }
 
