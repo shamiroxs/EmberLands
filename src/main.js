@@ -517,7 +517,7 @@ function drawRadar() {
   }
 }
 
-function isMobileDevice() {
+export function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 }
 
@@ -551,48 +551,4 @@ if (isMobileDevice()) {
     simulateKey('ShiftLeft', 'keyup');
   });
 
-  const gameCanvas = document.getElementById('game')
-  gameCanvas.addEventListener('touchstart', onTouchStart)
-  gameCanvas.addEventListener('touchmove', onTouchMove)
-  gameCanvas.addEventListener('touchend', onTouchEnd)
-
-  let touchStartX = null
-
-  function onTouchStart(e) {
-    if (e.touches.length === 1) {
-      touchStartX = e.touches[0].clientX
-    }
-  }
-
-  function onTouchMove(e) {
-    if (touchStartX === null || e.touches.length !== 1) return
-
-    const touchCurrentX = e.touches[0].clientX
-    const deltaX = touchCurrentX - touchStartX
-
-    const simulatedEvent = {
-      movementX: -deltaX, 
-      movementY: 0
-    }
-
-    simulateMouseMove(simulatedEvent)
-
-    touchStartX = touchCurrentX
-  }
-
-  function onTouchEnd() {
-    touchStartX = null
-  }
-}
-
-export function simulateMouseMove(deltaX) {
-  const event = new MouseEvent("mousemove", {
-    bubbles: true,
-    cancelable: true,
-    movementX: deltaX,
-    movementY: 0,
-    clientX: window.innerWidth / 2,
-    clientY: window.innerHeight / 2
-  });
-  window.dispatchEvent(event);
 }

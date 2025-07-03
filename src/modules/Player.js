@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 import { getDuelState } from './duelManager.js'
-import { onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate, simulateMouseMove } from '../main.js';
+import { isMobileDevice, onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate, simulateMouseMove } from '../main.js';
 
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
@@ -178,8 +178,10 @@ export class Player {
     }
 
     const simulateMouseMove = (e) => {
-      if (!this.pointerLocked) return
-    
+      if(!isMobileDevice()){
+        if (!this.pointerLocked) return
+      }
+
       const sensitivity = 0.002
       this.rotation.yaw -= e.movementX * sensitivity
       this.rotation.pitch -= e.movementY * sensitivity
