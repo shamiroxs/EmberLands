@@ -181,11 +181,13 @@ export class Player {
     }
 
     const simulateMouseMove = (e) => {
+
+      let sensitivity = 0.004
       if(!isMobileDevice()){
         if (!this.pointerLocked) return
+        sensitivity = 0.002
       }
 
-      const sensitivity = 0.002
       this.rotation.yaw -= e.movementX * sensitivity
       this.rotation.pitch -= e.movementY * sensitivity
     
@@ -323,9 +325,6 @@ export class Player {
         this.currentState = 'idle';
       }
     });
-    
-
-    
 
     const canvas = document.getElementById('game')
 
