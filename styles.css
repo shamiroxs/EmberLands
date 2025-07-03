@@ -227,6 +227,7 @@ body {
     width: 120px;
     height: 120px;
     z-index: 100;
+    display: none;
   }
   
   #thumbstick-bg {
