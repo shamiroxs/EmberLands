@@ -283,7 +283,11 @@ export class Player {
 
     // Mouse buttons
     window.addEventListener('mousedown', (e) => {
-      if (!getDuelState().active || !this.pointerLocked) return;  
+      if (!getDuelState().active) return;  
+
+      if(!isMobileDevice()){
+        if (!this.pointerLocked) return;
+      }
 
       if (e.button === 2) { 
         this.mouseButtonsHeld.right = true;
