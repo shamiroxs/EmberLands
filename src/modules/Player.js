@@ -417,6 +417,9 @@ export class Player {
   
 
   takeDamage(amount) {
+
+    if(this.currentState === 'blocking') return;
+
     this.health = Math.max(0, this.health - amount)
 
     this.playAction('taking_punch', 0.31)
