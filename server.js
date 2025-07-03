@@ -1,6 +1,5 @@
 import { WebSocketServer } from 'ws'
 import { v4 as uuidv4 } from 'uuid'
-import { duelState } from './src/modules/duelManager.js'
 
 const wss = new WebSocketServer({ port: 8080 })
 const clients = new Map()

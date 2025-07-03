@@ -66,7 +66,6 @@ const contactMaterial = new CANNON.ContactMaterial(
 
 world.addContactMaterial(contactMaterial);
 
-
 const { mesh: terrainMesh, heightData, size, resolution } = await createTerrain(scene)
 
 //terrain
@@ -161,6 +160,19 @@ toggleButton.addEventListener('click', () => {
 let opponentId;
 const clock = new THREE.Clock()
 let arenaMixer = null
+
+function simulateKey(key, type = 'keydown') {
+  const event = new KeyboardEvent(type, { key, code: key, bubbles: true });
+  window.dispatchEvent(event);
+}
+
+function simulateMouse(button, type = 'mousedown') {
+  const event = new MouseEvent(type, {
+    bubbles: true,
+    button: button
+  });
+  window.dispatchEvent(event);
+}
 
 function animate() {
   requestAnimationFrame(animate)
@@ -502,4 +514,35 @@ function drawRadar() {
       radarCtx.fill()
     }
   }
+}
+
+function isMobileDevice() {
+  return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+}
+
+if (!isMobileDevice()) {
+  document.getElementById('mobileControls').classList.remove('hidden')
+
+  document.getElementById('btnPunch').addEventListener('click', () => {
+    simulateMouse(2, 'mousedown');
+    setTimeout(() => simulateMouse(2, 'mouseup'), 300);
+  });
+
+  document.getElementById('btnKick').addEventListener('click', () => {
+    simulateMouse(0, 'mousedown');
+    setTimeout(() => simulateMouse(0, 'mouseup'), 300);
+  });
+
+  document.getElementById('btnJump').addEventListener('click', () => {
+    simulateKey('Space', 'keydown');
+    setTimeout(() => simulateKey('Space', 'keyup'), 200);
+  });
+
+  document.getElementById('btnBlock').addEventListener('pointerdown', () => {
+    simulateKey('ShiftLeft', 'keydown');
+  });
+  document.getElementById('btnBlock').addEventListener('pointerup', () => {
+    simulateKey('ShiftLeft', 'keyup');
+  });
+
 }

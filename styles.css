@@ -165,3 +165,56 @@ body {
     pointer-events: auto;
   }
   
+  .mobile-controls {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+  }
+  
+  .button-ring {
+    position: relative;
+    width: 150px;
+    height: 150px;
+  }
+  
+  .control-button {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 1.5rem;
+    border: none;
+    font-weight: bold;
+  }
+  
+  .control-button.top {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .control-button.right {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+  }
+  
+  .control-button.bottom {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .control-button.left {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+  }
+  
+  .mobile-controls.hidden {
+    display: none;
+  }
+  
