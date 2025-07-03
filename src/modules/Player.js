@@ -4,7 +4,7 @@ import * as CANNON from 'cannon-es'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'; 
 import { getDuelState } from './duelManager.js'
-import { onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate } from '../main.js';
+import { onDuelEnd, sendAttemptAttack, sendDuelEnd, sendHealthUpdate, simulateMouseMove } from '../main.js';
 
 export class Player {
   constructor(scene, world, isLocal = true, terrainMesh = null, camera = null, playerMaterial = null, id=null) {
@@ -171,19 +171,47 @@ export class Player {
     this.pointerLocked = false
     this.rotation = { yaw: 0, pitch: 0 }
 
-    const onMouseMove = (e) => {
-      if (!this.pointerLocked) return
+    let touchStartX = null
 
+    const onMouseMove = (e) => {
+      simulateMouseMove(e);
+    }
+
+    const simulateMouseMove = (e) => {
+      if (!this.pointerLocked) return
+    
       const sensitivity = 0.002
       this.rotation.yaw -= e.movementX * sensitivity
       this.rotation.pitch -= e.movementY * sensitivity
-
+    
       this.rotation.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.rotation.pitch))
-
+    
       this.updateCameraRotation()
       this.mesh.rotation.y = this.rotation.yaw + Math.PI
-
     }
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX
+      }
+    }
+    
+    const onTouchMove = (e) => {
+      if (touchStartX === null || e.touches.length !== 1) return
+    
+      const touchCurrentX = e.touches[0].clientX
+      const deltaX = touchCurrentX - touchStartX
+    
+      simulateMouseMove({ movementX: -deltaX, movementY: 0 })
+    
+      touchStartX = touchCurrentX
+    }
+    
+    const onTouchEnd = () => {
+      touchStartX = null
+    }
+    
+    
 
     window.addEventListener('mousemove', onMouseMove)
 
@@ -260,6 +288,11 @@ export class Player {
     document.addEventListener('pointerlockchange', () => {
       this.pointerLocked = document.pointerLockElement === canvas
     })
+
+    canvas.addEventListener('touchstart', onTouchStart)
+    canvas.addEventListener('touchmove', onTouchMove)
+    canvas.addEventListener('touchend', onTouchEnd)
+
   }
 
   attemptAttack() {

@@ -522,6 +522,11 @@ function isMobileDevice() {
 }
 
 if (isMobileDevice()) {
+  const minimap = document.getElementById('minimap')
+  if (minimap) {
+    minimap.style.display ='none'
+  }
+
   document.getElementById('mobileControls').classList.remove('hidden')
 
   document.getElementById('btnPunch').addEventListener('click', () => {
@@ -578,19 +583,16 @@ if (isMobileDevice()) {
   function onTouchEnd() {
     touchStartX = null
   }
+}
 
-  function simulateMouseMove(e) {
-    if (!localPlayer || !localPlayer.pointerLocked) return;
-  
-    const sensitivity = 0.002;
-    localPlayer.rotation.yaw -= e.movementX * sensitivity;
-    localPlayer.rotation.pitch -= e.movementY * sensitivity;
-  
-    localPlayer.rotation.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, localPlayer.rotation.pitch));
-  
-    localPlayer.updateCameraRotation();
-    localPlayer.mesh.rotation.y = localPlayer.rotation.yaw + Math.PI;
-  }
-  
-
+export function simulateMouseMove(deltaX) {
+  const event = new MouseEvent("mousemove", {
+    bubbles: true,
+    cancelable: true,
+    movementX: deltaX,
+    movementY: 0,
+    clientX: window.innerWidth / 2,
+    clientY: window.innerHeight / 2
+  });
+  window.dispatchEvent(event);
 }
