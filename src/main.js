@@ -206,7 +206,8 @@ animate()
 
 let duelProcess = false;
 
-const socket = new WebSocket("ws://localhost:8080")
+//const socket = new WebSocket("ws://localhost:8080")
+const socket = new WebSocket("wss://emberlands-server.onrender.com")
 
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.')
@@ -520,7 +521,7 @@ function isMobileDevice() {
   return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 }
 
-if (!isMobileDevice()) {
+if (isMobileDevice()) {
   document.getElementById('mobileControls').classList.remove('hidden')
 
   document.getElementById('btnPunch').addEventListener('click', () => {
