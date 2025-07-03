@@ -5,7 +5,7 @@ import { world } from './physics/physics.js'
 import { Water } from 'three/examples/jsm/objects/Water2.js'
 import { TextureLoader, Vector2, PlaneGeometry, RepeatWrapping, Color } from 'three'
 import seedrandom from 'seedrandom'
-import { pauseBackgroundMusic, playBackgroundMusic, resumeBackgroundMusic, stopBackgroundMusic } from './core/sound.js'
+import { pauseBackgroundMusic, playBackgroundMusic, playBattleMusic, playFailSound, playPunchSound, playWinSound, resumeBackgroundMusic, stopBackgroundMusic, stopBattleMusic } from './core/sound.js'
 import cannonDebugger from 'cannon-es-debugger'
 import { createTerrain, buildHeightMatrix, scatterObstacles } from './modules/world/world.js'
 import { hideDuelPrompt, showDuelInvite, showDuelPrompt } from './modules/ui/duelUI.js'
@@ -207,8 +207,8 @@ animate()
 
 let duelProcess = false;
 
-//const socket = new WebSocket("ws://localhost:8080")
-const socket = new WebSocket("wss://emberlands-server.onrender.com")
+const socket = new WebSocket("ws://localhost:8080")
+//const socket = new WebSocket("wss://emberlands-server.onrender.com")
 
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.')
@@ -273,6 +273,8 @@ socket.onmessage = (event) => {
         duelProcess = false
 
         duelState.active = false
+        stopBattleMusic();
+        if (!isMuted) playBackgroundMusic();
       }
     }
   } else if (message.type === 'duelInvite') {
@@ -283,6 +285,9 @@ socket.onmessage = (event) => {
   } else if (message.type === 'duelAccepted') {
     duelProcess = true
     hideDuelPrompt()
+
+    stopBackgroundMusic();
+    if (!isMuted) playBattleMusic();
   {
     (async () => {
       const localPosition = localPlayer.getPosition()
@@ -296,6 +301,7 @@ socket.onmessage = (event) => {
     })()
   }
   } else if (message.type === 'healthUpdate') {
+    if (!isMuted) playPunchSound()
     const player = remotePlayers.get(message.id)
     if (player) {
       player.health = message.health
@@ -324,6 +330,9 @@ socket.onmessage = (event) => {
 
     duelState.players = []
     duelState.arena = null
+
+    if (!isMuted) playBackgroundMusic();
+    stopBattleMusic();
   }  
 }
 
@@ -340,18 +349,23 @@ export function onDuelEnd(loserId) {
   if (localPlayer.id === winnerId) {
     localPlayer.playAction('victory', 6)  
     localPlayer.currentState = 'victory'
+    if (!isMuted) playWinSound();
+    
   } else if (localPlayer.id === loserId) {
     localPlayer.playAction('defeated', 6)
     localPlayer.currentState = 'defeated'
+    if (!isMuted) playFailSound();
   }
 
   for (const [id, remote] of remotePlayers.entries()) {
     if (id === winnerId) {
       remote.playAction('victory', 6)
       remote.currentState = 'victory'
+      if (!isMuted) playWinSound();
     } else if (id === loserId) {
       remote.playAction('defeated', 6)
       remote.currentState = 'defeated'
+      if (!isMuted) playFailSound();
     }
   }
 
@@ -382,6 +396,10 @@ export function sendDuelEnd(loserId) {
 
   duelState.players = []
   duelState.arena = null
+
+  if (!isMuted) playBackgroundMusic();
+  stopBattleMusic();
+
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({
       type: 'duelEnd',
@@ -412,6 +430,8 @@ export function sendDuelRequest(opponentId) {
 }
 
 export async function acceptDuelRequest(duelChallengerId){
+  stopBackgroundMusic();
+  if (!isMuted) playBattleMusic();
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ 
       type: 'duelAccepted', 
@@ -443,6 +463,7 @@ export function isDuelProcess(isDuel){
 }
 
 export function sendHealthUpdate(playerId, health) {
+  if (!isMuted) playPunchSound();
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({
       type: 'healthUpdate',
