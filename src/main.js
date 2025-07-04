@@ -11,6 +11,7 @@ import { createTerrain, buildHeightMatrix, scatterObstacles } from './modules/wo
 import { hideDuelPrompt, showDuelInvite, showDuelPrompt } from './modules/ui/duelUI.js'
 import { destroyArena, summonArena } from './modules/world/arena.js'
 import { duelState } from './modules/duelManager.js'
+import { startStory } from './modules/ui/tutorial.js'
 
 const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
@@ -173,6 +174,10 @@ function simulateMouse(button, type = 'mousedown') {
     button: button
   });
   canvas.dispatchEvent(event);
+}
+
+if(!isMobileDevice()){
+  startStory()
 }
 
 function animate() {
