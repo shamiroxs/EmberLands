@@ -2,7 +2,7 @@
 
 ![Logo](public/preview.png)
 
-**Emberlands: The Last Flame** is a browser-based 3D fantasy RPG survival game built with **Three.js**, featuring real-time multiplayer **duels**, physics-based movement, and a dynamic snow-covered world where the last remnants of fire are sacred. Players explore a mystical frozen forest, challenge nearby players to combat in magical summoned arenas, and strive to protect (or conquer) the last flame in a world on the brink.
+**Emberlands: The Last Flame** is a browser-based 3D fantasy RPG survival game built with **Three.js**, featuring real-time multiplayer **duels** and physics-based movement. Players explore a mystical land, challenge nearby players to combat in magical summoned arenas, and strive to protect (or conquer) the last flame in a world on the brink.
 
 This project is both a game and a learning journey — combining 3D rendering, physics, multiplayer, and storytelling into one long-term creative experience.
 
@@ -21,11 +21,11 @@ This project is both a game and a learning journey — combining 3D rendering, p
 
 ### 💻 Desktop Gameplay
 
-<img src="images/desk1.png" width="45%" /> <img src="images/desk2.png" width="45%" />
+<img src="image/desk1.png" width="45%" /> <img src="image/desk2.png" width="45%" />
 
 ### 📱 Mobile Preview
 
-<img src="images/phone1.jpeg" width="45%" /> <img src="images/phone2.jpeg" width="45%" />
+<img src="image/phone1.jpeg" width="45%" /> <img src="image/phone2.jpeg" width="45%" />
 
 ---
 
@@ -67,7 +67,7 @@ This project is both a game and a learning journey — combining 3D rendering, p
 ### 📦 Install
 
 ```bash
-git clone https://github.com/your-username/emberlands.git
+git clone https://github.com/shamiroxs/emberlands.git
 cd emberlands
 npm install
 ````
@@ -87,16 +87,15 @@ cd server
 node server.js
 ```
 
-Make sure to update the `WebSocket` URL in your `main.js` to `ws://localhost:3001` or use environment variables for dev vs prod.
+Make sure to update the `WebSocket` URL in your `main.js` to `ws://localhost:8080` or use environment variables for dev vs prod.
 
 ---
 
 ## 👥 Credits
 
-* 🔥 **Developer & Designer**: \[Your Name Here]
-* 🎨 Models: OpenGameArt / Poly Pizza / Custom assets
+* 🔥 **Developer & Designer**: Shamir Ashraf
+* 🎨 Models: Sketchfab / Custom assets
 * 🌐 Networking: Native WebSocket API
-* 📚 3D Learning: [Three.js Journey by Bruno Simon](https://threejs-journey.com)
 
 ---
 
