@@ -39,6 +39,7 @@ export function stopBackgroundMusic() {
 
 export function pauseBackgroundMusic() {
     backgroundMusic.pause();
+    battleMusic.stop();
 }
 
 export function resumeBackgroundMusic() {

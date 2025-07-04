@@ -212,8 +212,8 @@ animate()
 
 let duelProcess = false;
 
-//const socket = new WebSocket("ws://localhost:8080")
-const socket = new WebSocket("wss://emberlands-server.onrender.com")
+const socket = new WebSocket("ws://localhost:8080")
+//const socket = new WebSocket("wss://emberlands-server.onrender.com")
 
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.')
@@ -278,8 +278,6 @@ socket.onmessage = (event) => {
         duelProcess = false
 
         duelState.active = false
-        stopBattleMusic();
-        if (!isMuted) playBackgroundMusic();
       }
     }
   } else if (message.type === 'duelInvite') {
@@ -351,6 +349,14 @@ export function onDuelEnd(loserId) {
   // UI message
   const text = (winnerId === myId) ? '🏆 You Win the Duel!' : (loserId === myId) ? '💀 You Lost the Duel!' : `👑 Player ${winnerId} wins the duel!`
 
+  // Reset 
+  localPlayer.health = 100
+  localPlayer.takeDamage(0)
+  for (const player of remotePlayers.values()) {
+    player.health = 100
+    player.takeDamage(0)
+  }
+
   if (localPlayer.id === winnerId) {
     localPlayer.playAction('victory', 6)  
     localPlayer.currentState = 'victory'
@@ -366,11 +372,9 @@ export function onDuelEnd(loserId) {
     if (id === winnerId) {
       remote.playAction('victory', 6)
       remote.currentState = 'victory'
-      if (!isMuted) playWinSound();
     } else if (id === loserId) {
       remote.playAction('defeated', 6)
       remote.currentState = 'defeated'
-      if (!isMuted) playFailSound();
     }
   }
 
@@ -386,12 +390,6 @@ export function onDuelEnd(loserId) {
     resultBox.classList.add('hidden')
   }, 4000)
 
-
-  // Reset 
-  localPlayer.health = 100
-  for (const player of remotePlayers.values()) {
-    player.health = 100
-  }
   destroyArena(scene, world)
 }
 
