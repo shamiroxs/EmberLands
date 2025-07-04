@@ -2,9 +2,9 @@
 
 ![Logo](public/preview.png)
 
-**Emberlands: The Last Flame** is a browser-based 3D fantasy RPG survival game built with **Three.js**, featuring real-time multiplayer **duels** and physics-based movement. Players explore a mystical land, challenge nearby players to combat in magical summoned arenas, and strive to protect (or conquer) the last flame in a world on the brink.
+**Emberlands: The Last Flame** is a browser-based 3D fantasy RPG survival game built with **Three.js**, featuring real-time multiplayer **duels** and physics-based movement. Players explore a mystical land, challenge nearby players to combat in magical circle, and strive to protect (or conquer) the last flame in a world on the brink.
 
-This project is both a game and a learning journey — combining 3D rendering, physics, multiplayer, and storytelling into one long-term creative experience.
+This project is both a game and a learning journey, combining 3D rendering, physics, multiplayer, and storytelling into one long-term creative experience.
 
 ---
 
