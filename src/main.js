@@ -12,6 +12,7 @@ import { hideDuelPrompt, showDuelInvite, showDuelPrompt } from './modules/ui/due
 import { destroyArena, summonArena } from './modules/world/arena.js'
 import { duelState } from './modules/duelManager.js'
 import { startStory } from './modules/ui/tutorial.js'
+import { Slime } from './modules/slime.js'
 
 const canvas = document.getElementById('game')
 const renderer = new THREE.WebGLRenderer({ canvas })
@@ -130,6 +131,33 @@ const rng = seedrandom("forest-map-v1")
 
 scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
 
+//Add slimes
+const slimes = []
+
+const slimeData = [
+  { position: new THREE.Vector3(38, 5, 10),  model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(-19, 5, 47), model: '/models/slime2.glb', anim: 'slime-idle' },
+  { position: new THREE.Vector3(39, 5, -27),  model: '/models/slime2.glb', anim: 'slime-jump' },
+  { position: new THREE.Vector3(-40, 5, -50), model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(40, 5, 15),  model: '/models/slime2.glb', anim: 'slime-idle' },
+  { position: new THREE.Vector3(22, 5, 30),  model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(10, 5, -33), model: '/models/slime2.glb', anim: 'slime-jump' },
+  { position: new THREE.Vector3(-18, 5, 18),  model: '/models/slime2.glb', anim: 'slime-idle' },
+  { position: new THREE.Vector3(20, 5, -10), model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(-10, 5, 50),  model: '/models/slime2.glb', anim: 'slime-jump' },
+  { position: new THREE.Vector3(50, 5, 15),   model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(-10, 5, -19), model: '/models/slime2.glb', anim: 'slime-idle' },
+  { position: new THREE.Vector3(47, 5, -10),  model: '/models/slime2.glb', anim: 'slime-jump' },
+  { position: new THREE.Vector3(-16, 5, 26),  model: '/models/slime1.glb', anim: '' },
+  { position: new THREE.Vector3(50, 5, 30),  model: '/models/slime2.glb', anim: 'slime-idle' },
+
+]
+
+for (const data of slimeData) {
+  const slime = new Slime(scene, world, data.model, data.position, data.anim)
+  slimes.push(slime)
+}
+
 const remotePlayers = new Map() 
 window.remotePlayers = remotePlayers
 let myId = null
@@ -186,13 +214,16 @@ function animate() {
 
   //cannonDebug.update();
 
+  const deltaTime = clock.getDelta()
+  for (const slime of slimes) {
+    slime.update(deltaTime)
+  }
+
   const localBar = document.getElementById('localHealthBarContainer')
   if (localBar) {
     localBar.style.display = duelState.active ? 'block' : 'none'
   }
 
-
-  const deltaTime = clock.getDelta()
   for (const player of remotePlayers.values()) {
     player.update(world, deltaTime)
   }
@@ -212,8 +243,8 @@ animate()
 
 let duelProcess = false;
 
-//const socket = new WebSocket("ws://localhost:8080")
-const socket = new WebSocket("wss://emberlands-server.onrender.com")
+const socket = new WebSocket("ws://localhost:8080")
+//const socket = new WebSocket("wss://emberlands-server.onrender.com")
 
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.')
