@@ -250,7 +250,7 @@ body {
     touch-action: none;
   }
   
-  @media (orientation: portrait) {
+  @media (max-width: 480px) and (orientation: portrait) {
     .control-button {
       width: 80px;
       height: 80px;
