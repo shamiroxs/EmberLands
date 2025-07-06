@@ -302,7 +302,7 @@ export class Player {
         if (!this.pointerLocked) return;
       }
 
-      if (e.button === 2 || this.touchControls.punch) { 
+      if (e.button === 2) { 
         this.mouseButtonsHeld.right = true;
 
         if (this.attackCooldown) return
@@ -310,7 +310,7 @@ export class Player {
 
         this.playAction('punching', 1);
         this.currentState = 'punching'
-      } else if (e.button === 0 || this.touchControls.kick) {
+      } else if (e.button === 0) {
         this.mouseButtonsHeld.left = true;
 
         if (this.attackCooldown) return
@@ -528,7 +528,7 @@ export class Player {
           return;
         } else {
           this.lockedState = null;
-          const attackStillHeld = (this.attackIntent === 'punch' && this.mouseButtonsHeld.right) || (this.attackIntent === 'kick' && this.mouseButtonsHeld.left);
+          const attackStillHeld = (this.attackIntent === 'punch' && (this.mouseButtonsHeld.right || this.touchControls.punch)) || (this.attackIntent === 'kick' && (this.mouseButtonsHeld.left  || this.touchControls.kick));
 
 
           if (this.attackIntent && attackStillHeld) {
