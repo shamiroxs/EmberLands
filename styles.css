@@ -193,26 +193,26 @@ body {
   }
   
   .control-button.top {
-    top: -15%;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
   }
   
   .control-button.right {
     top: 50%;
-    right: -15%;
+    right: 0;
     transform: translateY(-50%);
   }
   
   .control-button.bottom {
-    bottom: -15%;
+    bottom: 0;
     left: 50%;
     transform: translateX(-50%);
   }
   
   .control-button.left {
     top: 50%;
-    left: -15%;
+    left: 0;
     transform: translateY(-50%);
   }
   
@@ -224,8 +224,8 @@ body {
     position: absolute;
     bottom: 4vh;
     left: 4vw;
-    width: 180px;
-    height: 180px;
+    width: 120px;
+    height: 120px;
     z-index: 100;
     display: none;
   }
@@ -250,7 +250,7 @@ body {
     touch-action: none;
   }
   
-  @media (max-width: 480px) and (orientation: portrait) {
+  @media (orientation: portrait) {
     .control-button {
       width: 80px;
       height: 80px;
@@ -268,6 +268,32 @@ body {
       left: 60px;
       top: 60px;
     }
+
+
+  .control-button.top {
+    top: -15%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .control-button.right {
+    top: 50%;
+    right: -15%;
+    transform: translateY(-50%);
+  }
+  
+  .control-button.bottom {
+    bottom: -15%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .control-button.left {
+    top: 50%;
+    left: -15%;
+    transform: translateY(-50%);
+  }
+  
   }
 
   
