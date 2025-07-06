@@ -169,8 +169,8 @@ body {
   
   .mobile-controls {
     position: fixed;
-    bottom: 3rem;
-    right: 3rem;
+    bottom: 4vh;
+    right: 4vw;
     z-index: 9999;
   }
   
@@ -184,6 +184,7 @@ body {
     position: absolute;
     width: 60px;
     height: 60px;
+
     border-radius: 50%;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
