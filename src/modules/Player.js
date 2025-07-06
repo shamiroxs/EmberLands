@@ -302,7 +302,7 @@ export class Player {
         if (!this.pointerLocked) return;
       }
 
-      if (e.button === 2) { 
+      if (e.button === 2 || this.touchControls.punch) { 
         this.mouseButtonsHeld.right = true;
 
         if (this.attackCooldown) return
@@ -310,7 +310,7 @@ export class Player {
 
         this.playAction('punching', 1);
         this.currentState = 'punching'
-      } else if (e.button === 0) {
+      } else if (e.button === 0 || this.touchControls.kick) {
         this.mouseButtonsHeld.left = true;
 
         if (this.attackCooldown) return
@@ -367,12 +367,14 @@ export class Player {
       }, { passive: false })
     }
     
-    setupTouchButton('btn-up', 'up')
+    setupTouchButton('btn-up', 'forward')
     setupTouchButton('btn-left', 'left')
     setupTouchButton('btn-right', 'right')
-    setupTouchButton('btn-jump', 'jump')
-    setupTouchButton('btn-block', 'block')   
-
+    
+    setupTouchButton('btnPunch', 'punch')
+    setupTouchButton('btnKick', 'kick')
+    setupTouchButton('btnBlock', 'block')
+    setupTouchButton('btnJump', 'jump')
   }
 
   attemptAttack() {
