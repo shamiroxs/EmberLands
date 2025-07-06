@@ -30,6 +30,17 @@ export class Player {
       right: false
     };    
 
+    this.touchControls = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      jump: false,
+      block: false,
+      punch: false,
+      kick: false
+    }    
+    
     const spawnX = 0
     const spawnZ = 0
     let spawnY = 15
@@ -166,7 +177,7 @@ export class Player {
   
 
   setupControls() {
-    
+
     this.pointerLocked = false
     this.rotation = { yaw: 0, pitch: 0 }
 
@@ -340,6 +351,27 @@ export class Player {
     canvas.addEventListener('touchstart', onTouchStart)
     canvas.addEventListener('touchmove', onTouchMove)
     canvas.addEventListener('touchend', onTouchEnd)
+
+    const setupTouchButton = (id, key) => {
+      const btn = document.getElementById(id)
+      if (!btn) return
+    
+      btn.addEventListener('touchstart', e => {
+        e.preventDefault()
+        this.touchControls[key] = true
+      }, { passive: false })
+    
+      btn.addEventListener('touchend', e => {
+        e.preventDefault()
+        this.touchControls[key] = false
+      }, { passive: false })
+    }
+    
+    setupTouchButton('btn-up', 'up')
+    setupTouchButton('btn-left', 'left')
+    setupTouchButton('btn-right', 'right')
+    setupTouchButton('btn-jump', 'jump')
+    setupTouchButton('btn-block', 'block')   
 
   }
 
@@ -518,10 +550,11 @@ export class Player {
       right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize()
 
       const moveDir = new THREE.Vector3()
-      if (this.keys.forward) moveDir.add(forward)
-      if (this.keys.backward) moveDir.sub(forward)
-      if (this.keys.left) moveDir.sub(right)
-      if (this.keys.right) moveDir.add(right)
+      if (this.touchControls.forward || this.keys.forward) moveDir.add(forward)
+      if (this.touchControls.backward || this.keys.backward) moveDir.sub(forward)
+      if (this.touchControls.left || this.keys.left) moveDir.sub(right)
+      if (this.touchControls.right || this.keys.right) moveDir.add(right)
+      
 
       moveDir.normalize()
 
@@ -544,7 +577,7 @@ export class Player {
 
       const isMoving = moveDir.lengthSq() > 0
 
-      if (getDuelState().active && this.keys.block) {
+      if (getDuelState().active && (this.touchControls.block || this.keys.block)) {
         if (this.currentState !== 'blocking') {
           this.playAction('blocking');
           this.currentState = 'blocking';
@@ -578,7 +611,7 @@ export class Player {
       this.canJump = result.hasHit
       this.mesh.position.copy(this.body.position).add(new THREE.Vector3(0, -0.5, 0)) 
 
-      if (this.keys.jump && this.canJump && !this.isJumping) {
+      if ((this.touchControls.jump || this.keys.jump) && this.canJump && !this.isJumping) {
         vel.y = jumpForce
         this.canJump = false
       
