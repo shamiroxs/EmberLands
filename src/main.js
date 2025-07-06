@@ -632,3 +632,20 @@ if (isMobileDevice()) {
   });
 
 }
+
+function requestFullscreen() {
+  const el = document.documentElement
+  if (el.requestFullscreen) {
+    el.requestFullscreen()
+  } else if (el.webkitRequestFullscreen) {
+    el.webkitRequestFullscreen()
+  } else if (el.msRequestFullscreen) {
+    el.msRequestFullscreen()
+  }
+}
+
+canvas.addEventListener('click', () => {
+  requestFullscreen()
+  canvas.requestPointerLock()
+})
+
