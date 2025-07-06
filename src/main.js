@@ -21,6 +21,18 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
+function onWindowResize() {
+  const width = window.innerWidth
+  const height = window.innerHeight
+
+  camera.aspect = width / height
+  camera.updateProjectionMatrix()
+
+  renderer.setSize(width, height)
+  renderer.setPixelRatio(window.devicePixelRatio)
+}
+
+
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x222233)
 
@@ -207,6 +219,12 @@ function simulateMouse(button, type = 'mousedown') {
 if(!isMobileDevice()){
   startStory()
 }
+
+window.addEventListener('resize', onWindowResize)
+
+window.addEventListener('orientationchange', () => {
+  setTimeout(onWindowResize, 300)
+})
 
 function animate() {
   requestAnimationFrame(animate)
