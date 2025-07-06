@@ -250,3 +250,23 @@ body {
     touch-action: none;
   }
   
+  @media (max-width: 480px) and (orientation: portrait) {
+    .control-button {
+      width: 80px;
+      height: 80px;
+      font-size: 2rem;
+    }
+  
+    #thumbstick-container {
+      width: 140px;
+      height: 140px;
+    }
+  
+    #thumbstick-knob {
+      width: 50px;
+      height: 50px;
+      left: 45px;
+      top: 45px;
+    }
+  }
+  
