@@ -367,12 +367,6 @@ export class Player {
       }, { passive: false })
     }
     
-    setupTouchButton('btn-up', 'forward')
-    setupTouchButton('btn-left', 'left')
-    setupTouchButton('btn-right', 'right')
-    
-    setupTouchButton('btnPunch', 'punch')
-    setupTouchButton('btnKick', 'kick')
     setupTouchButton('btnBlock', 'block')
     setupTouchButton('btnJump', 'jump')
   }
@@ -528,7 +522,7 @@ export class Player {
           return;
         } else {
           this.lockedState = null;
-          const attackStillHeld = (this.attackIntent === 'punch' && (this.mouseButtonsHeld.right || this.touchControls.punch)) || (this.attackIntent === 'kick' && (this.mouseButtonsHeld.left  || this.touchControls.kick));
+          const attackStillHeld = (this.attackIntent === 'punch' && this.mouseButtonsHeld.right) || (this.attackIntent === 'kick' && this.mouseButtonsHeld.left);
 
 
           if (this.attackIntent && attackStillHeld) {
