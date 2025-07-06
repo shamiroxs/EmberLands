@@ -468,7 +468,7 @@ export class Player {
 
       //Allow rotation before lockstate
       if (this.camera) {
-        const cameraOffset = new THREE.Vector3(0, 2.5, 2) 
+        const cameraOffset = new THREE.Vector3(0, 2.5, 2.5) 
         const playerDirection = new THREE.Vector3()
         this.camera.getWorldDirection(playerDirection)
       
