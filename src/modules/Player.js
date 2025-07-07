@@ -193,7 +193,7 @@ export class Player {
 
     const simulateMouseMove = (e) => {
 
-      let sensitivity = 0.004
+      let sensitivity = 0.006
       if(!isMobileDevice()){
         if (!this.pointerLocked) return
         sensitivity = 0.002
