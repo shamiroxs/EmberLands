@@ -189,6 +189,7 @@ export class Player {
 
     let movementTouchId = null;
     let lookTouchId = null;
+    let accumulatedRotation = 0;
 
     const onMouseMove = (e) => {
       simulateMouseMove(e);
@@ -232,7 +233,7 @@ export class Player {
     }
     
     const onTouchMove = (e) => {
-      for (let touch of e.touches) {
+      for (let touch of e.changedTouches) {
         if (touch.identifier === movementTouchId) {
           const dx = touch.clientX - origin.x;
           const dy = touch.clientY - origin.y;
@@ -245,6 +246,7 @@ export class Player {
     
         if (touch.identifier === lookTouchId) {
           const deltaX = touch.clientX - touchStartX;
+          accumulatedRotation += deltaX;
           simulateMouseMove({ movementX: deltaX, movementY: 0 });
     
           touchStartX = touch.clientX;
