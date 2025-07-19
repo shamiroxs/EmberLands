@@ -216,7 +216,7 @@ export class Player {
       if (e.touches.length === 1) {
         touchStartX = e.touches[0].clientX
       }*/
-      for (let touch of e.changedTouches) {
+      for (let touch of e.touches) {
         if (lookTouchId === null) {
           lookTouchId = touch.identifier;
           lastTouchX = touch.clientX;
@@ -225,13 +225,14 @@ export class Player {
     }
     
     const onTouchMove = (e) => {
-      for (let touch of e.changedTouches) {
+      for (let touch of e.touches) {
         if (touch.identifier === lookTouchId && lastTouchX !== null) {
           const deltaX = touch.clientX - lastTouchX;
     
-          simulateMouseMove({ movementX: deltaX, movementY: 0 }); 
+          simulateMouseMove({ movementX: deltaX, movementY: 0 });
     
-          lastTouchX = touch.clientX; 
+          lastTouchX = touch.clientX;
+          break; // only need to handle one look touch
         }
       }
       /*
