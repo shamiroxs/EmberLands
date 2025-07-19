@@ -187,6 +187,9 @@ export class Player {
     let origin = { x: 0, y: 0 }
     let active = false
 
+    let movementTouchId = null;
+    let lookTouchId = null;
+
     const onMouseMove = (e) => {
       simulateMouseMove(e);
     }
@@ -209,12 +212,45 @@ export class Player {
     }
 
     const onTouchStart = (e) => {
+      /*
       if (e.touches.length === 1) {
         touchStartX = e.touches[0].clientX
+      }*/
+      for (let touch of e.changedTouches) {
+        const target = touch.target;
+    
+        if (target.closest('#thumbstick-container') && movementTouchId === null) {
+          movementTouchId = touch.identifier;
+          origin.x = touch.clientX;
+          origin.y = touch.clientY;
+          active = true;
+        } else if (lookTouchId === null) {
+          lookTouchId = touch.identifier;
+          touchStartX = touch.clientX;
+        }
       }
     }
     
     const onTouchMove = (e) => {
+      for (let touch of e.changedTouches) {
+        if (touch.identifier === movementTouchId) {
+          const dx = touch.clientX - origin.x;
+          const dy = touch.clientY - origin.y;
+    
+          knob.style.left = `${40 + dx}px`;
+          knob.style.top = `${40 + dy}px`;
+    
+          updateDirection(dx, dy);
+        }
+    
+        if (touch.identifier === lookTouchId) {
+          const deltaX = touch.clientX - touchStartX;
+          simulateMouseMove({ movementX: deltaX, movementY: 0 });
+    
+          touchStartX = touch.clientX;
+        }
+      }
+      /*
       if (touchStartX === null || e.touches.length !== 1) return
     
       const touchCurrentX = e.touches[0].clientX
@@ -222,11 +258,24 @@ export class Player {
     
       simulateMouseMove({ movementX: deltaX, movementY: 0 })
     
-      touchStartX = touchCurrentX
+      touchStartX = touchCurrentX*/
     }
     
     const onTouchEnd = () => {
-      touchStartX = null
+
+      for (let touch of e.changedTouches) {
+        if (touch.identifier === movementTouchId) {
+          movementTouchId = null;
+          active = false;
+          resetThumbstick();
+        }
+    
+        if (touch.identifier === lookTouchId) {
+          lookTouchId = null;
+          touchStartX = null;
+        }
+      }
+      //touchStartX = null
     }
     
     const resetThumbstick = () => {
