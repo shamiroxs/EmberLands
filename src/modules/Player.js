@@ -216,23 +216,38 @@ export class Player {
       if (e.touches.length === 1) {
         touchStartX = e.touches[0].clientX
       }*/
-      for (let touch of e.touches) {
-        if (lookTouchId === null) {
+      for (let touch of e.changedTouches) {
+        const target = touch.target;
+    
+        if (target.closest('#thumbstick-container') && movementTouchId === null) {
+          movementTouchId = touch.identifier;
+          origin.x = touch.clientX;
+          origin.y = touch.clientY;
+          active = true;
+        } else if (lookTouchId === null) {
           lookTouchId = touch.identifier;
-          lastTouchX = touch.clientX;
+          touchStartX = touch.clientX;
         }
       }
     }
     
     const onTouchMove = (e) => {
       for (let touch of e.touches) {
-        if (touch.identifier === lookTouchId && lastTouchX !== null) {
-          const deltaX = touch.clientX - lastTouchX;
+        if (touch.identifier === movementTouchId) {
+          const dx = touch.clientX - origin.x;
+          const dy = touch.clientY - origin.y;
     
+          knob.style.left = `${40 + dx}px`;
+          knob.style.top = `${40 + dy}px`;
+    
+          updateDirection(dx, dy);
+        }
+    
+        if (touch.identifier === lookTouchId) {
+          const deltaX = touch.clientX - touchStartX;
           simulateMouseMove({ movementX: deltaX, movementY: 0 });
     
-          lastTouchX = touch.clientX;
-          break; // only need to handle one look touch
+          touchStartX = touch.clientX;
         }
       }
       /*
@@ -249,9 +264,15 @@ export class Player {
     const onTouchEnd = () => {
 
       for (let touch of e.changedTouches) {
+        if (touch.identifier === movementTouchId) {
+          movementTouchId = null;
+          active = false;
+          resetThumbstick();
+        }
+    
         if (touch.identifier === lookTouchId) {
           lookTouchId = null;
-          lastTouchX = null;
+          touchStartX = null;
         }
       }
       //touchStartX = null
