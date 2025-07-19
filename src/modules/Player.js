@@ -217,37 +217,21 @@ export class Player {
         touchStartX = e.touches[0].clientX
       }*/
       for (let touch of e.changedTouches) {
-        const target = touch.target;
-    
-        if (target.closest('#thumbstick-container') && movementTouchId === null) {
-          movementTouchId = touch.identifier;
-          origin.x = touch.clientX;
-          origin.y = touch.clientY;
-          active = true;
-        } else if (lookTouchId === null) {
+        if (lookTouchId === null) {
           lookTouchId = touch.identifier;
-          touchStartX = touch.clientX;
+          lastTouchX = touch.clientX;
         }
       }
     }
     
     const onTouchMove = (e) => {
       for (let touch of e.changedTouches) {
-        if (touch.identifier === movementTouchId) {
-          const dx = touch.clientX - origin.x;
-          const dy = touch.clientY - origin.y;
+        if (touch.identifier === lookTouchId && lastTouchX !== null) {
+          const deltaX = touch.clientX - lastTouchX;
     
-          knob.style.left = `${40 + dx}px`;
-          knob.style.top = `${40 + dy}px`;
+          simulateMouseMove({ movementX: deltaX, movementY: 0 }); 
     
-          updateDirection(dx, dy);
-        }
-    
-        if (touch.identifier === lookTouchId) {
-          const deltaX = touch.clientX - touchStartX;
-          simulateMouseMove({ movementX: deltaX, movementY: 0 });
-    
-          touchStartX = touch.clientX;
+          lastTouchX = touch.clientX; 
         }
       }
       /*
@@ -264,15 +248,9 @@ export class Player {
     const onTouchEnd = () => {
 
       for (let touch of e.changedTouches) {
-        if (touch.identifier === movementTouchId) {
-          movementTouchId = null;
-          active = false;
-          resetThumbstick();
-        }
-    
         if (touch.identifier === lookTouchId) {
           lookTouchId = null;
-          touchStartX = null;
+          lastTouchX = null;
         }
       }
       //touchStartX = null
