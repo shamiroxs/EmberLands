@@ -189,7 +189,7 @@ export class Player {
 
     let movementTouchId = null;
     let lookTouchId = null;
-    let accumulatedRotation = 0;
+    let lastTouchX = null;
 
     const onMouseMove = (e) => {
       simulateMouseMove(e);
@@ -228,6 +228,7 @@ export class Player {
         } else if (lookTouchId === null) {
           lookTouchId = touch.identifier;
           touchStartX = touch.clientX;
+          lastTouchX = touch.clientX;
         }
       }
     }
@@ -246,10 +247,9 @@ export class Player {
     
         if (touch.identifier === lookTouchId) {
           const deltaX = touch.clientX - touchStartX;
-          accumulatedRotation += deltaX;
           simulateMouseMove({ movementX: deltaX, movementY: 0 });
     
-          touchStartX = touch.clientX;
+          lastTouchX = touch.clientX;
         }
       }
       /*
@@ -275,6 +275,7 @@ export class Player {
         if (touch.identifier === lookTouchId) {
           lookTouchId = null;
           touchStartX = null;
+          lastTouchX = null;
         }
       }
       //touchStartX = null
