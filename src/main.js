@@ -108,8 +108,11 @@ const cameraTarget = new THREE.Vector3()
 
 const localPlayer = new Player(scene, world, true, terrainMesh, camera, playerMaterial, myId)
 
-camera.position.set(0, 5, -10)
-camera.lookAt(localPlayer.mesh.position)
+camera.position.set(0, 7.5, 2.5);   
+camera.lookAt(new THREE.Vector3(0, 6.5, 0)); 
+
+const slimes = []
+const obstacles = [];
 
 async function initEnvironment() {
   //textures
@@ -149,13 +152,11 @@ async function initEnvironment() {
   scene.add(water)
   
   //Obstacles
-  const obstacles = [];
   const rng = seedrandom("forest-map-v1")
   
   await scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
   
   //Add slimes
-  const slimes = []
   
   const slimeData = [
     { position: new THREE.Vector3(38, 5, 10),  model: '/models/slime1.glb', anim: '' },
