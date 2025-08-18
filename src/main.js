@@ -152,7 +152,7 @@ async function initEnvironment() {
   const obstacles = [];
   const rng = seedrandom("forest-map-v1")
   
-  scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
+  await scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
   
   //Add slimes
   const slimes = []
