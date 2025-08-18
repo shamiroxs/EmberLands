@@ -98,7 +98,6 @@ async function addObstacle(scene, path, position, scale = 1, obstacles) {
     world.addBody(body)
 
     obstacles.push(position.clone());
-  })
 }
 
 // Place N objects randomly on terrain
