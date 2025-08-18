@@ -64,7 +64,7 @@ const modelPaths = {
 }
 
 
-function addObstacle(scene, path, position, scale = 1, obstacles) {
+async function addObstacle(scene, path, position, scale = 1, obstacles) {
   loader.load(path, (gltf) => {
     const model = gltf.scene
     model.position.copy(position)
@@ -119,6 +119,6 @@ export async function scatterObstacles(scene, heightData, size, resolution, heig
     else if (type === 'rock') scale_model = 0.01 + rng() * 0.01
     else if (type === 'bush') scale_model = 5
 
-    addObstacle(scene, path, new THREE.Vector3(x, y, z), scale_model, obstacles)
+    await addObstacle(scene, path, new THREE.Vector3(x, y, z), scale_model, obstacles)
   }
 }
