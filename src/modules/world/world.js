@@ -63,19 +63,25 @@ const modelPaths = {
   grass: '/models/grass.glb',
 }
 
+function loadGLTF(path) {
+  return new Promise((resolve, reject) => {
+    loader.load(path, resolve, undefined, reject)
+  })
+}
 
 async function addObstacle(scene, path, position, scale = 1, obstacles) {
-  loader.load(path, (gltf) => {
-    const model = gltf.scene
-    model.position.copy(position)
-    model.scale.setScalar(scale)
-    model.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true
-        child.receiveShadow = true
-      }
-    })
-    scene.add(model)
+  const gltf = await loadGLTF(path)
+  const model = gltf.scene
+
+  model.position.copy(position)
+  model.scale.setScalar(scale)
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true
+      child.receiveShadow = true
+    }
+  })
+  scene.add(model)
 
     // Add physics (approximate with box shape)
     const bbox = new THREE.Box3().setFromObject(model)
