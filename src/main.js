@@ -163,7 +163,7 @@ async function initEnvironment() {
     { position: new THREE.Vector3(-19, 5, 47), model: '/models/slime2.glb', anim: 'slime-idle' },
     { position: new THREE.Vector3(39, 5, -27),  model: '/models/slime2.glb', anim: 'slime-jump' },
     { position: new THREE.Vector3(-40, 5, -50), model: '/models/slime1.glb', anim: '' },
-    { position: new THREE.Vector3(40, 5, 15),  model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(40, 5, 20),  model: '/models/slime2.glb', anim: 'slime-idle' },
     { position: new THREE.Vector3(22, 5, 30),  model: '/models/slime1.glb', anim: '' },
     { position: new THREE.Vector3(10, 5, -33), model: '/models/slime2.glb', anim: 'slime-jump' },
     { position: new THREE.Vector3(-18, 5, 18),  model: '/models/slime2.glb', anim: 'slime-idle' },
@@ -173,7 +173,7 @@ async function initEnvironment() {
     { position: new THREE.Vector3(-10, 5, -19), model: '/models/slime2.glb', anim: 'slime-idle' },
     { position: new THREE.Vector3(47, 5, -10),  model: '/models/slime2.glb', anim: 'slime-jump' },
     { position: new THREE.Vector3(-16, 5, 26),  model: '/models/slime1.glb', anim: '' },
-    { position: new THREE.Vector3(50, 5, 30),  model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(50, 5, 40),  model: '/models/slime2.glb', anim: 'slime-idle' },
   
   ]
   
