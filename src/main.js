@@ -101,81 +101,88 @@ const cannonDebug = cannonDebugger(scene, world, {
   color: 0x00ff00, 
 });
 
-//textures
-const loader_sky = new THREE.CubeTextureLoader()
-const skybox = loader_sky.setPath('/textures/skybox/').load([
-  'xpos.jpg', 'xneg.jpg',
-  'ypos.jpg', 'yneg.jpg',
-  'zpos.jpg', 'zneg.jpg',
-])
-scene.background = skybox
-
-//fog
-scene.fog = new THREE.Fog(0x88bb88, 10, 60) // color, near, far
-
-//water
-const textureLoader = new TextureLoader()
-const normalMap0 = textureLoader.load('/textures/waternormals.jpg')
-const normalMap1 = textureLoader.load('/textures/waternormals.jpg')
-normalMap0.wrapS = normalMap0.wrapT = RepeatWrapping
-normalMap1.wrapS = normalMap1.wrapT = RepeatWrapping
-
-const waterGeometry = new PlaneGeometry(100, 100)
-
-const water = new Water(waterGeometry, {
-  color: 0x447799,
-  scale: 2,                    
-  flowDirection: new Vector2(0, 1), 
-  textureWidth: 512,
-  textureHeight: 512,
-  normalMap0,
-  normalMap1,
-  flowSpeed: 0.01,            
-})
-
-water.rotation.x = -Math.PI / 2
-water.position.y = 0.9 //0.74
-scene.add(water)
-
-//Obstacles
-const obstacles = [];
-const rng = seedrandom("forest-map-v1")
-
-scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
-
-//Add slimes
-const slimes = []
-
-const slimeData = [
-  { position: new THREE.Vector3(38, 5, 10),  model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(-19, 5, 47), model: '/models/slime2.glb', anim: 'slime-idle' },
-  { position: new THREE.Vector3(39, 5, -27),  model: '/models/slime2.glb', anim: 'slime-jump' },
-  { position: new THREE.Vector3(-40, 5, -50), model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(40, 5, 15),  model: '/models/slime2.glb', anim: 'slime-idle' },
-  { position: new THREE.Vector3(22, 5, 30),  model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(10, 5, -33), model: '/models/slime2.glb', anim: 'slime-jump' },
-  { position: new THREE.Vector3(-18, 5, 18),  model: '/models/slime2.glb', anim: 'slime-idle' },
-  { position: new THREE.Vector3(20, 5, -10), model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(-10, 5, 50),  model: '/models/slime2.glb', anim: 'slime-jump' },
-  { position: new THREE.Vector3(50, 5, 15),   model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(-10, 5, -19), model: '/models/slime2.glb', anim: 'slime-idle' },
-  { position: new THREE.Vector3(47, 5, -10),  model: '/models/slime2.glb', anim: 'slime-jump' },
-  { position: new THREE.Vector3(-16, 5, 26),  model: '/models/slime1.glb', anim: '' },
-  { position: new THREE.Vector3(50, 5, 30),  model: '/models/slime2.glb', anim: 'slime-idle' },
-
-]
-
-for (const data of slimeData) {
-  const slime = new Slime(scene, world, data.model, data.position, data.anim)
-  slimes.push(slime)
-}
-
 const remotePlayers = new Map() 
 window.remotePlayers = remotePlayers
 let myId = null
 const cameraTarget = new THREE.Vector3()
 
 const localPlayer = new Player(scene, world, true, terrainMesh, camera, playerMaterial, myId)
+
+camera.position.set(0, 5, -10)
+camera.lookAt(localPlayer.mesh.position)
+
+async function initEnvironment() {
+  //textures
+  const loader_sky = new THREE.CubeTextureLoader()
+  const skybox = loader_sky.setPath('/textures/skybox/').load([
+    'xpos.jpg', 'xneg.jpg',
+    'ypos.jpg', 'yneg.jpg',
+    'zpos.jpg', 'zneg.jpg',
+  ])
+  scene.background = skybox
+  
+  //fog
+  scene.fog = new THREE.Fog(0x88bb88, 10, 60) // color, near, far
+  
+  //water
+  const textureLoader = new TextureLoader()
+  const normalMap0 = textureLoader.load('/textures/waternormals.jpg')
+  const normalMap1 = textureLoader.load('/textures/waternormals.jpg')
+  normalMap0.wrapS = normalMap0.wrapT = RepeatWrapping
+  normalMap1.wrapS = normalMap1.wrapT = RepeatWrapping
+  
+  const waterGeometry = new PlaneGeometry(100, 100)
+  
+  const water = new Water(waterGeometry, {
+    color: 0x447799,
+    scale: 2,                    
+    flowDirection: new Vector2(0, 1), 
+    textureWidth: 512,
+    textureHeight: 512,
+    normalMap0,
+    normalMap1,
+    flowSpeed: 0.01,            
+  })
+  
+  water.rotation.x = -Math.PI / 2
+  water.position.y = 0.9 //0.74
+  scene.add(water)
+  
+  //Obstacles
+  const obstacles = [];
+  const rng = seedrandom("forest-map-v1")
+  
+  scatterObstacles(scene, heightData, size, resolution, 15, 40, rng, obstacles)
+  
+  //Add slimes
+  const slimes = []
+  
+  const slimeData = [
+    { position: new THREE.Vector3(38, 5, 10),  model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(-19, 5, 47), model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(39, 5, -27),  model: '/models/slime2.glb', anim: 'slime-jump' },
+    { position: new THREE.Vector3(-40, 5, -50), model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(40, 5, 15),  model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(22, 5, 30),  model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(10, 5, -33), model: '/models/slime2.glb', anim: 'slime-jump' },
+    { position: new THREE.Vector3(-18, 5, 18),  model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(20, 5, -10), model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(-10, 5, 50),  model: '/models/slime2.glb', anim: 'slime-jump' },
+    { position: new THREE.Vector3(50, 5, 15),   model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(-10, 5, -19), model: '/models/slime2.glb', anim: 'slime-idle' },
+    { position: new THREE.Vector3(47, 5, -10),  model: '/models/slime2.glb', anim: 'slime-jump' },
+    { position: new THREE.Vector3(-16, 5, 26),  model: '/models/slime1.glb', anim: '' },
+    { position: new THREE.Vector3(50, 5, 30),  model: '/models/slime2.glb', anim: 'slime-idle' },
+  
+  ]
+  
+  for (const data of slimeData) {
+    const slime = new Slime(scene, world, data.model, data.position, data.anim)
+    slimes.push(slime)
+  }
+
+}
+initEnvironment()
 
 const minimap = document.getElementById('minimap')
 const radarCtx = minimap.getContext('2d')
