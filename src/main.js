@@ -275,8 +275,8 @@ let sendInterval;
 
 function connectToServer() {
 
-  socket = new WebSocket("ws://localhost:8080")
-  //socket = new WebSocket("wss://emberlands-server.onrender.com")
+  //socket = new WebSocket("ws://localhost:8080")
+  socket = new WebSocket("wss://emberlands-server.onrender.com")
 
   socket.onopen = () => {
     console.log('WebSocket connection established.')
