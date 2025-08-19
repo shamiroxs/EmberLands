@@ -89,7 +89,7 @@ async function addObstacle(scene, path, position, scale = 1, obstacles) {
     bbox.getSize(size)
 
     const shape = new CANNON.Box(
-      new CANNON.Vec3(size.x / 2.5, size.y / 2.5, size.z / 2.5)
+      new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)
     )
 
     const body = new CANNON.Body({ mass: 0 })

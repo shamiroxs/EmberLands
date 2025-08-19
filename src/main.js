@@ -271,12 +271,12 @@ let duelProcess = false;
 
 let socket;
 let sendInterval;
-let message;
+//let message;
 
 function connectToServer() {
 
-  //socket = new WebSocket("ws://localhost:8080")
-  socket = new WebSocket("wss://emberlands-server.onrender.com")
+  socket = new WebSocket("ws://localhost:8080")
+  //socket = new WebSocket("wss://emberlands-server.onrender.com")
 
   socket.onopen = () => {
     console.log('WebSocket connection established.')
@@ -307,7 +307,7 @@ function connectToServer() {
   };
 
   socket.onmessage = (event) => {
-    message = JSON.parse(event.data);
+    const message = JSON.parse(event.data);
     handleMessage(message); 
   };
 
@@ -415,7 +415,7 @@ function handleMessage(message) {
 
     if (!isMuted) playBackgroundMusic();
     stopBattleMusic();
-  }  
+  }
 }
 
 export function onDuelEnd(loserId) {
@@ -562,9 +562,6 @@ function checkNearbyPlayers() {
   for (const [id, player] of remotePlayers.entries()) {
     const dist = myPos.distanceTo(player.getPosition())
 
-    if(message.type === 'duelInvite'){
-      duelProcess = true;
-    }
     if (dist < 2 && !duelProcess) {
       opponentId = id
       showDuelPrompt(id) 
