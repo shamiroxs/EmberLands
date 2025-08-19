@@ -269,40 +269,61 @@ animate()
 
 let duelProcess = false;
 
-//const socket = new WebSocket("ws://localhost:8080")
-const socket = new WebSocket("wss://emberlands-server.onrender.com")
+let socket;
+let sendInterval;
 
-socket.addEventListener('open', () => {
-  console.log('WebSocket connection established.')
+function connectToServer() {
 
-  setInterval(() => {
-    if (socket.readyState === WebSocket.OPEN) {
-      const pos = localPlayer.getPosition()
-      const rotationY = localPlayer.getRotationY?.() || 0
-      const state = localPlayer.getState()
-  
-      const data = {
-        type: 'move',
-        position: {
-          x: pos.x,
-          y: pos.y,
-          z: pos.z
-        },
-        rotationY,
-        state
+  //socket = new WebSocket("ws://localhost:8080")
+  socket = new WebSocket("wss://emberlands-server.onrender.com")
+
+  socket.onopen = () => {
+    console.log('WebSocket connection established.')
+
+    if (sendInterval) clearInterval(sendInterval);
+
+    sendInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        const pos = localPlayer.getPosition()
+        const rotationY = localPlayer.getRotationY?.() || 0
+        const state = localPlayer.getState()
+    
+        const data = {
+          type: 'move',
+          position: {
+            x: pos.x,
+            y: pos.y,
+            z: pos.z
+          },
+          rotationY,
+          state
+        }
+    
+        socket.send(JSON.stringify(data))
       }
+    }, 100)
   
-      socket.send(JSON.stringify(data))
-    }
-  }, 100)
-  
-})
+  };
 
-let msgType;
+  socket.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    handleMessage(message); 
+  };
 
-socket.onmessage = (event) => {
-  const message = JSON.parse(event.data)
-  msgType = message.type
+  socket.onclose = () => {
+    console.warn("❌ Disconnected. Retrying in 10s...");
+    setTimeout(connectToServer, 10000);
+  };
+
+  socket.onerror = (err) => {
+    console.error("⚠️ Error:", err);
+    socket.close(); 
+  };
+}
+
+connectToServer();
+
+function handleMessage(message) {
 
   if (message.type === 'init') {
     myId = message.id
@@ -540,7 +561,7 @@ function checkNearbyPlayers() {
   for (const [id, player] of remotePlayers.entries()) {
     const dist = myPos.distanceTo(player.getPosition())
 
-    if(msgType === 'duelInvite'){
+    if(message.type === 'duelInvite'){
       duelProcess = true;
     }
     if (dist < 2 && !duelProcess) {
