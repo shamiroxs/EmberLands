@@ -271,6 +271,7 @@ let duelProcess = false;
 
 let socket;
 let sendInterval;
+let message;
 
 function connectToServer() {
 
@@ -306,7 +307,7 @@ function connectToServer() {
   };
 
   socket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
+    message = JSON.parse(event.data);
     handleMessage(message); 
   };
 
